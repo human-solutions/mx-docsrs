@@ -1,9 +1,11 @@
 mod cli;
 mod crate_spec;
+mod docfetch;
 mod version_resolver;
 
 use anyhow::Result;
 use cli::Cli;
+use docfetch::fetch_docs;
 use version_resolver::VersionResolver;
 
 fn main() -> Result<()> {
@@ -26,8 +28,9 @@ fn main() -> Result<()> {
         }
     };
 
-    println!("Crate: {} @ {}", args.crate_spec.name, version);
-    println!("Symbol: {}", args.symbol);
+    // Fetch the documentation HTML
+    let html = fetch_docs(&args.crate_spec.name, &version, &args.symbol)?;
+    println!("\n{}", html);
 
     Ok(())
 }
