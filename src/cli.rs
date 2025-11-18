@@ -1,12 +1,15 @@
 use clap::Parser;
 
+use crate::crate_spec::CrateSpec;
+
 /// Search for documentation of a symbol in a crate
 #[derive(Parser, Debug)]
 #[command(name = "docsrs")]
 #[command(about = "Search for documentation of a symbol in a crate", long_about = None)]
 pub struct Cli {
-    /// The crate name to search in
-    pub crate_name: String,
+    /// The crate name to search in, optionally with version (e.g., "serde" or "serde@1.0")
+    #[arg(value_parser = parse_crate_spec)]
+    pub crate_spec: CrateSpec,
 
     /// The symbol to search for
     pub symbol: String,
@@ -16,4 +19,8 @@ impl Cli {
     pub fn parse_args() -> Self {
         Self::parse()
     }
+}
+
+fn parse_crate_spec(s: &str) -> Result<CrateSpec, String> {
+    CrateSpec::parse(s).map_err(|e| e.to_string())
 }

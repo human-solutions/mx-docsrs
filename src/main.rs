@@ -1,10 +1,33 @@
 mod cli;
+mod crate_spec;
+mod version_resolver;
 
+use anyhow::Result;
 use cli::Cli;
+use version_resolver::VersionResolver;
 
-fn main() {
+fn main() -> Result<()> {
     let args = Cli::parse_args();
 
-    println!("Crate: {}", args.crate_name);
+    // Resolve the version
+    let version = if let Some(explicit_version) = args.crate_spec.version {
+        // Use explicitly provided version
+        explicit_version
+    } else {
+        // Try to resolve from Cargo.toml
+        match VersionResolver::new() {
+            Ok(resolver) => resolver
+                .resolve_version(&args.crate_spec.name)
+                .unwrap_or_else(|| "latest".to_string()),
+            Err(_) => {
+                // No Cargo.toml found, default to latest
+                "latest".to_string()
+            }
+        }
+    };
+
+    println!("Crate: {} @ {}", args.crate_spec.name, version);
     println!("Symbol: {}", args.symbol);
+
+    Ok(())
 }
