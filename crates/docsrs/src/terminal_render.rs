@@ -69,13 +69,14 @@ fn render_section(section: &DocSection) {
         println!("  {} {}", "•".bright_blue(), item.signature.white());
 
         if let Some(docs) = &item.docs
-            && !docs.is_empty() {
-                // Render first line or two of docs for each child item
-                let first_line = docs.lines().next().unwrap_or("");
-                if !first_line.is_empty() {
-                    println!("    {}", first_line.dimmed());
-                }
+            && !docs.is_empty()
+        {
+            // Render first line or two of docs for each child item
+            let first_line = docs.lines().next().unwrap_or("");
+            if !first_line.is_empty() {
+                println!("    {}", first_line.dimmed());
             }
+        }
 
         println!();
     }

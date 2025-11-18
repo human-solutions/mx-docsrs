@@ -30,7 +30,9 @@ fn test_cli_with_crate_in_dependencies() {
     let (stdout, _stderr, success) = run_cli(&["anyhow", "Error"]);
     assert!(success, "CLI should succeed");
     assert!(
-        stdout.contains("Multiple items found") || stdout.contains("struct:") || stdout.contains("Error"),
+        stdout.contains("Multiple items found")
+            || stdout.contains("struct:")
+            || stdout.contains("Error"),
         "Should show results for Error"
     );
 }
@@ -111,7 +113,9 @@ fn test_cli_resolves_anyhow_dependency() {
     let (stdout, _stderr, success) = run_cli(&["anyhow", "Error"]);
     assert!(success, "CLI should succeed");
     assert!(
-        stdout.contains("struct:") || stdout.contains("Error") || stdout.contains("Multiple items found"),
+        stdout.contains("struct:")
+            || stdout.contains("Error")
+            || stdout.contains("Multiple items found"),
         "Should show Error results"
     );
 }
@@ -121,7 +125,9 @@ fn test_cli_complex_version_requirement() {
     let (stdout, _stderr, success) = run_cli(&["serde@latest", "Serialize"]);
     assert!(success, "CLI should succeed");
     assert!(
-        stdout.contains("trait:") || stdout.contains("Serialize") || stdout.contains("Multiple items found"),
+        stdout.contains("trait:")
+            || stdout.contains("Serialize")
+            || stdout.contains("Multiple items found"),
         "Should show Serialize results"
     );
 }

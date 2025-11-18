@@ -1,0 +1,20 @@
+[package]
+name = "mx-docsrs"
+version = "0.1.0"
+edition.workspace = true
+
+[[bin]]
+name = "docsrs"
+path = "src/main.rs"
+
+[dependencies]
+clap.workspace = true
+cargo_metadata.workspace = true
+anyhow.workspace = true
+ureq.workspace = true
+rustdoc-types.workspace = true
+zstd.workspace = true
+serde_json.workspace = true
+directories.workspace = true
+colored.workspace = true
+pulldown-cmark.workspace = true
