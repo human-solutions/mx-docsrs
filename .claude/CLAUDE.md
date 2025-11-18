@@ -1,0 +1,1 @@
+- when adding dependencies, search online to make sure the latest one is used
