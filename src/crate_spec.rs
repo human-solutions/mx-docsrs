@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use std::str::FromStr;
 
 /// Represents a crate specification with optional version

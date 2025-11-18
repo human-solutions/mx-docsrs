@@ -1,1 +1,2 @@
 - when adding dependencies, search online to make sure the latest one is used
+- After changing the code always run cargo fmt, clippy and test

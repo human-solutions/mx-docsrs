@@ -1,11 +1,15 @@
 mod cli;
 mod crate_spec;
 mod docfetch;
+mod docrender;
+mod terminal_render;
 mod version_resolver;
 
 use anyhow::Result;
 use cli::Cli;
 use docfetch::{clear_cache, fetch_docs};
+use docrender::extract_doc;
+use terminal_render::{render_search_results_list, render_to_terminal};
 use version_resolver::VersionResolver;
 
 fn main() -> Result<()> {
@@ -17,12 +21,12 @@ fn main() -> Result<()> {
     }
 
     // Require crate_spec and symbol if not clearing cache
-    let crate_spec = args.crate_spec.ok_or_else(|| {
-        anyhow::anyhow!("Missing required argument: CRATE_SPEC")
-    })?;
-    let symbol = args.symbol.ok_or_else(|| {
-        anyhow::anyhow!("Missing required argument: SYMBOL")
-    })?;
+    let crate_spec = args
+        .crate_spec
+        .ok_or_else(|| anyhow::anyhow!("Missing required argument: CRATE_SPEC"))?;
+    let symbol = args
+        .symbol
+        .ok_or_else(|| anyhow::anyhow!("Missing required argument: SYMBOL"))?;
 
     // Resolve the version
     let version = if let Some(explicit_version) = crate_spec.version {
@@ -45,22 +49,33 @@ fn main() -> Result<()> {
     let use_cache = !args.no_cache;
 
     // Fetch and search documentation
-    let results = fetch_docs(&crate_spec.name, &version, &symbol, use_cache)?;
+    let (results, krate) = fetch_docs(&crate_spec.name, &version, &symbol, use_cache)?;
 
-    // Display results
-    println!("\n=== Search Results ===\n");
-
+    // Handle results
     if results.is_empty() {
-        println!("No items found matching '{}'", symbol);
+        println!("\nNo items found matching '{}'", symbol);
+        return Ok(());
+    }
+
+    if results.len() > 1 {
+        // Multiple results - list them with FQDNs and exit
+        let search_data: Vec<(&String, &String, &Vec<String>)> = results
+            .iter()
+            .map(|r| (&r.item_type, &r.name, &r.path))
+            .collect();
+
+        render_search_results_list(&search_data);
+        return Ok(());
+    }
+
+    // Only one result - show full documentation
+    let selected_result = &results[0];
+
+    if let Some(item) = krate.index.get(&selected_result.id) {
+        let doc = extract_doc(item, &krate)?;
+        render_to_terminal(&doc);
     } else {
-        for result in &results {
-            println!("{} {} ({})",
-                     result.item_type,
-                     result.name,
-                     result.path.join("::"));
-            println!("  {}\n", result.url);
-        }
-        println!("Total: {} result(s)", results.len());
+        anyhow::bail!("Failed to find item in crate index");
     }
 
     Ok(())

@@ -5,24 +5,31 @@ use std::fs;
 use std::io::Read;
 use std::path::PathBuf;
 
+use rustdoc_types::Id;
+
 /// Represents a search result from the documentation
 #[derive(Debug)]
 pub struct DocResult {
+    pub id: Id,
     pub name: String,
     pub item_type: String,
     pub path: Vec<String>,
+    #[allow(dead_code)]
     pub url: String,
 }
 
 /// Fetch and search documentation from docs.rs
-pub fn fetch_docs(crate_name: &str, version: &str, symbol: &str, use_cache: bool) -> Result<Vec<DocResult>> {
+/// Returns the search results and the parsed crate data
+pub fn fetch_docs(
+    crate_name: &str,
+    version: &str,
+    symbol: &str,
+    use_cache: bool,
+) -> Result<(Vec<DocResult>, Crate)> {
     // Try to load from cache first
     let compressed_data = if use_cache {
         match load_from_cache(crate_name, version) {
-            Ok(data) => {
-                println!("Loaded from cache");
-                data
-            }
+            Ok(data) => data,
             Err(_) => {
                 // Cache miss, download
                 download_and_cache(crate_name, version)?
@@ -30,37 +37,38 @@ pub fn fetch_docs(crate_name: &str, version: &str, symbol: &str, use_cache: bool
         }
     } else {
         // Skip cache, download directly
-        println!("Skipping cache (--no-cache)");
         download_rustdoc_json(crate_name, version)?
     };
 
     // Decompress with zstd
-    let decompressed_data = zstd::decode_all(&compressed_data[..])
-        .context("Failed to decompress zstd data")?;
-    println!("Decompressed to {} bytes", decompressed_data.len());
+    let decompressed_data =
+        zstd::decode_all(&compressed_data[..]).context("Failed to decompress zstd data")?;
 
     // Parse rustdoc JSON
-    let krate: Crate = serde_json::from_slice(&decompressed_data)
-        .context("Failed to parse rustdoc JSON")?;
-    let crate_name_from_json = krate.index.get(&krate.root)
-        .and_then(|i| i.name.as_ref())
-        .map(|s| s.as_str())
-        .unwrap_or("?");
-    println!("Parsed crate: {} (format version {})",
-             crate_name_from_json,
-             krate.format_version);
+    let krate: Crate =
+        serde_json::from_slice(&decompressed_data).context("Failed to parse rustdoc JSON")?;
 
     // Search for the symbol
-    let results = search_items(&krate, symbol, crate_name, version);
-    println!("Found {} matching items", results.len());
+    let mut results = search_items(&krate, symbol, crate_name, version);
 
-    Ok(results)
+    // Deduplicate results by FQDN (module_path + name)
+    // The path now always contains only parent modules (not the item name)
+    let mut seen = std::collections::HashSet::new();
+    results.retain(|result| {
+        // Build FQDN for deduplication
+        let mut parts = result.path.clone();
+        parts.push(result.name.clone());
+        let fqdn = parts.join("::");
+        seen.insert(fqdn)
+    });
+
+    Ok((results, krate))
 }
 
 /// Get the cache directory path for rustdoc JSON files
 fn get_cache_dir() -> Result<PathBuf> {
-    let proj_dirs = ProjectDirs::from("", "", "docsrs")
-        .context("Failed to determine cache directory")?;
+    let proj_dirs =
+        ProjectDirs::from("", "", "docsrs").context("Failed to determine cache directory")?;
     Ok(proj_dirs.cache_dir().to_path_buf())
 }
 
@@ -106,7 +114,10 @@ fn download_rustdoc_json(crate_name: &str, version: &str) -> Result<Vec<u8>> {
     }
 
     let mut compressed_data = Vec::new();
-    response.body_mut().as_reader().read_to_end(&mut compressed_data)?;
+    response
+        .body_mut()
+        .as_reader()
+        .read_to_end(&mut compressed_data)?;
     println!("Downloaded {} bytes (compressed)", compressed_data.len());
 
     Ok(compressed_data)
@@ -129,8 +140,7 @@ pub fn clear_cache() -> Result<()> {
     let cache_dir = get_cache_dir()?;
 
     if cache_dir.exists() {
-        fs::remove_dir_all(&cache_dir)
-            .context("Failed to clear cache")?;
+        fs::remove_dir_all(&cache_dir).context("Failed to clear cache")?;
         println!("Cache cleared: {}", cache_dir.display());
     } else {
         println!("Cache directory does not exist");
@@ -142,35 +152,105 @@ pub fn clear_cache() -> Result<()> {
 /// Search through rustdoc items for matches
 fn search_items(krate: &Crate, query: &str, crate_name: &str, version: &str) -> Vec<DocResult> {
     let mut results = Vec::new();
-    let query_lower = query.to_lowercase();
 
-    for (id, item) in &krate.index {
-        // Skip items without names
-        let Some(ref name) = item.name else {
-            continue;
-        };
+    // Check if query is a fully qualified domain name (contains "::")
+    let is_fqdn = query.contains("::");
 
-        // Check if item name matches the query (case-insensitive)
-        if name.to_lowercase().contains(&query_lower) {
-            // Build the path to this item using the paths map
-            let path = if let Some(summary) = krate.paths.get(id) {
-                summary.path.clone()
+    if is_fqdn {
+        // FQDN search: match exact path + name
+        let parts: Vec<&str> = query.split("::").collect();
+        if parts.is_empty() {
+            return results;
+        }
+
+        let query_name = parts.last().unwrap();
+        let query_path_parts: Vec<String> = parts[..parts.len() - 1]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+
+        for (id, item) in &krate.index {
+            let Some(ref name) = item.name else {
+                continue;
+            };
+
+            // Check if name matches (case-insensitive)
+            if name.to_lowercase() != query_name.to_lowercase() {
+                continue;
+            }
+
+            // Build the module path (parent modules, without item name)
+            // ItemSummary.path includes the item name as the last element, so we need to remove it
+            let module_path = if let Some(summary) = krate.paths.get(id) {
+                let mut path = summary.path.clone();
+                path.pop(); // Remove the item name (last element)
+                path
             } else {
                 vec![crate_name.to_string()]
             };
 
-            // Get item type as string
-            let item_type = get_item_type(&item.inner);
+            // Check if module path matches the query path
+            if module_path.len() >= query_path_parts.len() {
+                let path_lower: Vec<String> =
+                    module_path.iter().map(|s| s.to_lowercase()).collect();
+                let query_path_lower: Vec<String> =
+                    query_path_parts.iter().map(|s| s.to_lowercase()).collect();
 
-            // Generate documentation URL
-            let url = generate_url(crate_name, version, &path, name, item_type);
+                // Check if the relevant portion of the path matches
+                let matches = if query_path_parts.is_empty() {
+                    true
+                } else {
+                    // Find the query path within the actual path
+                    path_lower
+                        .windows(query_path_lower.len())
+                        .any(|window| window == query_path_lower.as_slice())
+                };
 
-            results.push(DocResult {
-                name: name.clone(),
-                item_type: item_type.to_string(),
-                path,
-                url,
-            });
+                if matches {
+                    let item_type = get_item_type(&item.inner);
+                    let url = generate_url(crate_name, version, &module_path, name, item_type);
+
+                    results.push(DocResult {
+                        id: *id,
+                        name: name.clone(),
+                        item_type: item_type.to_string(),
+                        path: module_path,
+                        url,
+                    });
+                }
+            }
+        }
+    } else {
+        // Simple search: substring match on name (case-insensitive)
+        let query_lower = query.to_lowercase();
+
+        for (id, item) in &krate.index {
+            let Some(ref name) = item.name else {
+                continue;
+            };
+
+            if name.to_lowercase().contains(&query_lower) {
+                // Build the module path (parent modules, without item name)
+                // ItemSummary.path includes the item name as the last element, so we need to remove it
+                let module_path = if let Some(summary) = krate.paths.get(id) {
+                    let mut path = summary.path.clone();
+                    path.pop(); // Remove the item name (last element)
+                    path
+                } else {
+                    vec![crate_name.to_string()]
+                };
+
+                let item_type = get_item_type(&item.inner);
+                let url = generate_url(crate_name, version, &module_path, name, item_type);
+
+                results.push(DocResult {
+                    id: *id,
+                    name: name.clone(),
+                    item_type: item_type.to_string(),
+                    path: module_path,
+                    url,
+                });
+            }
         }
     }
 
@@ -204,7 +284,13 @@ fn get_item_type(item: &ItemEnum) -> &'static str {
 }
 
 /// Generate a documentation URL for an item
-fn generate_url(crate_name: &str, version: &str, path: &[String], name: &str, item_type: &str) -> String {
+fn generate_url(
+    crate_name: &str,
+    version: &str,
+    path: &[String],
+    name: &str,
+    item_type: &str,
+) -> String {
     let base = format!("https://docs.rs/{}/{}", crate_name, version);
 
     if path.is_empty() {

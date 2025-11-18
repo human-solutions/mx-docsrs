@@ -57,7 +57,11 @@ impl VersionResolver {
         for package in &self.metadata.packages {
             if self.metadata.workspace_members.contains(&package.id) {
                 // Check if any dependencies match the crate name
-                if package.dependencies.iter().any(|dep| dep.name == crate_name) {
+                if package
+                    .dependencies
+                    .iter()
+                    .any(|dep| dep.name == crate_name)
+                {
                     // Now find the actual resolved version in the packages list
                     for pkg in &self.metadata.packages {
                         if pkg.name == crate_name && resolved_ids.contains(&pkg.id) {
