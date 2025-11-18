@@ -28,9 +28,24 @@ fn main() -> Result<()> {
         }
     };
 
-    // Fetch the documentation HTML
-    let html = fetch_docs(&args.crate_spec.name, &version, &args.symbol)?;
-    println!("\n{}", html);
+    // Fetch and search documentation
+    let results = fetch_docs(&args.crate_spec.name, &version, &args.symbol)?;
+
+    // Display results
+    println!("\n=== Search Results ===\n");
+
+    if results.is_empty() {
+        println!("No items found matching '{}'", args.symbol);
+    } else {
+        for result in &results {
+            println!("{} {} ({})",
+                     result.item_type,
+                     result.name,
+                     result.path.join("::"));
+            println!("  {}\n", result.url);
+        }
+        println!("Total: {} result(s)", results.len());
+    }
 
     Ok(())
 }
