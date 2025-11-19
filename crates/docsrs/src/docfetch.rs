@@ -5,16 +5,9 @@ use std::fs;
 use std::io::Read;
 use std::path::PathBuf;
 
-use crate::doc::search::{DocResult, search_items};
-
 /// Fetch and search documentation from docs.rs
 /// Returns the search results and the parsed crate data
-pub fn fetch_docs(
-    crate_name: &str,
-    version: &str,
-    symbol: &str,
-    use_cache: bool,
-) -> Result<(Vec<DocResult>, Crate)> {
+pub fn fetch_docs(crate_name: &str, version: &str, use_cache: bool) -> Result<Crate> {
     // Try to load from cache first
     let compressed_data = if use_cache {
         match load_from_cache(crate_name, version) {
@@ -37,21 +30,7 @@ pub fn fetch_docs(
     let krate: Crate =
         serde_json::from_slice(&decompressed_data).context("Failed to parse rustdoc JSON")?;
 
-    // Search for the symbol
-    let mut results = search_items(&krate, symbol, crate_name);
-
-    // Deduplicate results by FQDN (module_path + name)
-    // The path now always contains only parent modules (not the item name)
-    let mut seen = std::collections::HashSet::new();
-    results.retain(|result| {
-        // Build FQDN for deduplication
-        let mut parts = result.path.clone();
-        parts.push(result.name.clone());
-        let fqdn = parts.join("::");
-        seen.insert(fqdn)
-    });
-
-    Ok((results, krate))
+    Ok(krate)
 }
 
 /// Get the cache directory path for rustdoc JSON files

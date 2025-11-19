@@ -1,4 +1,3 @@
-use mx_docsrs::doc::search::{DocResult, search_items};
 use rustdoc_types::Crate;
 use std::path::PathBuf;
 
@@ -44,13 +43,6 @@ pub fn load_rustdoc_json(crate_name: &str) -> Crate {
 
     serde_json::from_str(&json_content)
         .unwrap_or_else(|e| panic!("Failed to parse JSON file at {:?}: {}", json_path, e))
-}
-
-/// Search for items in a test crate using the library search function.
-/// Returns the search results.
-pub fn search_test_crate(crate_name: &str, query: &str) -> Vec<DocResult> {
-    let krate = load_rustdoc_json(crate_name);
-    search_items(&krate, query, crate_name)
 }
 
 /// Format search results as a string for snapshot testing.

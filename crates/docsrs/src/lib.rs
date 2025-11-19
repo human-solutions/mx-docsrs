@@ -1,16 +1,12 @@
 mod cli;
 mod crate_spec;
-pub mod doc;
+mod doc;
 mod docfetch;
-mod ext;
-mod fmt;
 mod version_resolver;
 
 use clap::Parser;
 use cli::Cli;
-use doc::extract::extract_doc;
 use docfetch::{clear_cache, fetch_docs};
-use fmt::{format_search_results_list, format_to_terminal};
 use version_resolver::VersionResolver;
 
 /// Run the CLI with the given arguments and return the output as a string.
@@ -57,7 +53,7 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
     let crate_spec = parsed_args
         .crate_spec
         .ok_or_else(|| anyhow::anyhow!("Missing required argument: CRATE_SPEC"))?;
-    let symbol = parsed_args
+    let _symbol = parsed_args
         .symbol
         .ok_or_else(|| anyhow::anyhow!("Missing required argument: SYMBOL"))?;
 
@@ -82,34 +78,7 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
     let use_cache = !parsed_args.no_cache;
 
     // Fetch and search documentation
-    let (results, krate) = fetch_docs(&crate_spec.name, &version, &symbol, use_cache)?;
+    let krate = fetch_docs(&crate_spec.name, &version, use_cache)?;
 
-    // Handle results
-    if results.is_empty() {
-        output.push_str(&format!("\nNo items found matching '{}'\n", symbol));
-        return Ok(output);
-    }
-
-    if results.len() > 1 {
-        // Multiple results - list them with FQDNs
-        let search_data: Vec<(&String, &String, &Vec<String>)> = results
-            .iter()
-            .map(|r| (&r.item_type, &r.name, &r.path))
-            .collect();
-
-        output.push_str(&format_search_results_list(&search_data));
-        return Ok(output);
-    }
-
-    // Only one result - show full documentation
-    let selected_result = &results[0];
-
-    if let Some(item) = krate.index.get(&selected_result.id) {
-        let doc = extract_doc(item, &krate)?;
-        output.push_str(&format_to_terminal(&doc));
-    } else {
-        anyhow::bail!("Failed to find item in crate index");
-    }
-
-    Ok(output)
+    doc::extract_list(&krate)
 }
