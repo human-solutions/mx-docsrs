@@ -3,6 +3,10 @@ name = "mx-docsrs"
 version = "0.1.0"
 edition.workspace = true
 
+[lib]
+name = "mx_docsrs"
+path = "src/lib.rs"
+
 [[bin]]
 name = "docsrs"
 path = "src/main.rs"

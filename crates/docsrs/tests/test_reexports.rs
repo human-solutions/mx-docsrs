@@ -1,10 +1,10 @@
 mod common;
 
-use common::{find_items_by_name, find_reexports, generate_rustdoc_json, load_rustdoc_json};
+use common::{find_items_by_name, find_reexports, get_rustdoc_json_path, load_rustdoc_json};
 
 #[test]
 fn test_reexports_are_in_json() {
-    let json_path = generate_rustdoc_json("test-reexports");
+    let json_path = get_rustdoc_json_path("test-reexports");
     let krate = load_rustdoc_json(&json_path);
 
     let mut reexports = find_reexports(&krate);
@@ -22,7 +22,7 @@ fn test_reexports_are_in_json() {
 
 #[test]
 fn test_reexport_simple() {
-    let json_path = generate_rustdoc_json("test-reexports");
+    let json_path = get_rustdoc_json_path("test-reexports");
     let krate = load_rustdoc_json(&json_path);
 
     let reexports = find_reexports(&krate);
@@ -57,7 +57,7 @@ fn test_reexport_simple() {
 
 #[test]
 fn test_reexport_renamed() {
-    let json_path = generate_rustdoc_json("test-reexports");
+    let json_path = get_rustdoc_json_path("test-reexports");
     let krate = load_rustdoc_json(&json_path);
 
     let renamed_results = find_items_by_name(&krate, "RenamedStruct");
@@ -67,7 +67,7 @@ fn test_reexport_renamed() {
 
 #[test]
 fn test_reexport_multiple_items() {
-    let json_path = generate_rustdoc_json("test-reexports");
+    let json_path = get_rustdoc_json_path("test-reexports");
     let krate = load_rustdoc_json(&json_path);
 
     let trait_results = find_items_by_name(&krate, "InnerTrait");
@@ -104,7 +104,7 @@ fn test_reexport_multiple_items() {
 
 #[test]
 fn test_reexport_glob() {
-    let json_path = generate_rustdoc_json("test-reexports");
+    let json_path = get_rustdoc_json_path("test-reexports");
     let krate = load_rustdoc_json(&json_path);
 
     let reexports = find_reexports(&krate);
@@ -119,7 +119,7 @@ fn test_reexport_glob() {
 
 #[test]
 fn test_reexport_nested_module() {
-    let json_path = generate_rustdoc_json("test-reexports");
+    let json_path = get_rustdoc_json_path("test-reexports");
     let krate = load_rustdoc_json(&json_path);
 
     let results = find_items_by_name(&krate, "DeeplyNestedItem");
@@ -138,7 +138,7 @@ fn test_reexport_nested_module() {
 
 #[test]
 fn test_reexport_external_crate() {
-    let json_path = generate_rustdoc_json("test-reexports");
+    let json_path = get_rustdoc_json_path("test-reexports");
     let krate = load_rustdoc_json(&json_path);
 
     let reexports = find_reexports(&krate);
@@ -190,7 +190,7 @@ fn test_reexport_external_crate() {
 
 #[test]
 fn test_reexport_chain() {
-    let json_path = generate_rustdoc_json("test-reexports");
+    let json_path = get_rustdoc_json_path("test-reexports");
     let krate = load_rustdoc_json(&json_path);
 
     let results = find_items_by_name(&krate, "ChainedReexport");
@@ -200,7 +200,7 @@ fn test_reexport_chain() {
 
 #[test]
 fn test_reexport_visibility_change() {
-    let json_path = generate_rustdoc_json("test-reexports");
+    let json_path = get_rustdoc_json_path("test-reexports");
     let krate = load_rustdoc_json(&json_path);
 
     let results = find_items_by_name(&krate, "PublicItem");
@@ -210,7 +210,7 @@ fn test_reexport_visibility_change() {
 
 #[test]
 fn test_reexport_selective() {
-    let json_path = generate_rustdoc_json("test-reexports");
+    let json_path = get_rustdoc_json_path("test-reexports");
     let krate = load_rustdoc_json(&json_path);
 
     let foo_results = find_items_by_name(&krate, "Foo");

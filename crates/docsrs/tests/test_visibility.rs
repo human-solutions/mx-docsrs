@@ -1,10 +1,10 @@
 mod common;
 
-use common::{find_items_by_name, generate_rustdoc_json, load_rustdoc_json};
+use common::{find_items_by_name, get_rustdoc_json_path, load_rustdoc_json};
 
 #[test]
 fn test_visibility_public_items_are_in_json() {
-    let json_path = generate_rustdoc_json("test-visibility");
+    let json_path = get_rustdoc_json_path("test-visibility");
     let krate = load_rustdoc_json(&json_path);
 
     let public_struct_results = find_items_by_name(&krate, "PublicStruct");
@@ -46,7 +46,7 @@ fn test_visibility_public_items_are_in_json() {
 
 #[test]
 fn test_visibility_crate_visible_items_in_json() {
-    let json_path = generate_rustdoc_json("test-visibility");
+    let json_path = get_rustdoc_json_path("test-visibility");
     let krate = load_rustdoc_json(&json_path);
 
     let crate_struct_results = find_items_by_name(&krate, "CrateVisibleStruct");
@@ -62,7 +62,7 @@ fn test_visibility_crate_visible_items_in_json() {
 
 #[test]
 fn test_visibility_private_items_not_in_json() {
-    let json_path = generate_rustdoc_json("test-visibility");
+    let json_path = get_rustdoc_json_path("test-visibility");
     let krate = load_rustdoc_json(&json_path);
 
     let private_struct_results = find_items_by_name(&krate, "PrivateStruct");
@@ -87,7 +87,7 @@ fn test_visibility_private_items_not_in_json() {
 
 #[test]
 fn test_visibility_nested_super_visible() {
-    let json_path = generate_rustdoc_json("test-visibility");
+    let json_path = get_rustdoc_json_path("test-visibility");
     let krate = load_rustdoc_json(&json_path);
 
     let super_visible_results = find_items_by_name(&krate, "NestedSuperVisible");
@@ -97,7 +97,7 @@ fn test_visibility_nested_super_visible() {
 
 #[test]
 fn test_visibility_levels_are_recorded() {
-    let json_path = generate_rustdoc_json("test-visibility");
+    let json_path = get_rustdoc_json_path("test-visibility");
     let krate = load_rustdoc_json(&json_path);
 
     let mut visibility_info = vec![];
@@ -135,7 +135,7 @@ fn test_visibility_levels_are_recorded() {
 
 #[test]
 fn test_visibility_private_fields_handling() {
-    let json_path = generate_rustdoc_json("test-visibility");
+    let json_path = get_rustdoc_json_path("test-visibility");
     let krate = load_rustdoc_json(&json_path);
 
     let mut struct_info = None;

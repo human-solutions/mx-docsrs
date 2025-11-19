@@ -1,3 +1,3 @@
 mod terminal;
 
-pub use terminal::{render_search_results_list, render_to_terminal};
+pub use terminal::{format_search_results_list, format_to_terminal};

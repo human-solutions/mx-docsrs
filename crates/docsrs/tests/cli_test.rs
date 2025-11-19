@@ -1,21 +1,4 @@
-use std::process::Command;
-
-fn filter_cargo_noise(stderr: &str) -> String {
-    stderr
-        .lines()
-        .filter(|line| {
-            let trimmed = line.trim();
-            // Filter out cargo build messages, but keep actual error messages
-            !trimmed.starts_with("Blocking waiting for")
-                && !trimmed.starts_with("Compiling ")
-                && !trimmed.starts_with("Finished ")
-                && !trimmed.starts_with("Running ")
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
-        .trim()
-        .to_string()
-}
+// No longer need to filter cargo noise since we're not running cargo
 
 fn sort_search_results(stdout: &str) -> String {
     if !stdout.contains("Multiple items found") {
@@ -75,20 +58,14 @@ fn sort_search_results(stdout: &str) -> String {
 }
 
 fn run_cli(args: &[&str]) -> (String, String, bool) {
-    let output = Command::new("cargo")
-        .arg("run")
-        .arg("--")
-        .args(args)
-        .output()
-        .expect("Failed to execute command");
-
-    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-    let stdout = sort_search_results(&stdout);
-    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-    let stderr = filter_cargo_noise(&stderr);
-    let success = output.status.success();
-
-    (stdout, stderr, success)
+    // Call the library function directly
+    match mx_docsrs::run_cli(args) {
+        Ok(stdout) => {
+            let stdout = sort_search_results(&stdout);
+            (stdout, String::new(), true)
+        }
+        Err(stderr) => (String::new(), stderr, false),
+    }
 }
 
 #[test]
@@ -157,11 +134,8 @@ fn test_cli_with_unknown_crate() {
         "Should show error for unknown crate"
     );
 
-    insta::assert_snapshot!(stdout, @r"
-    Fetching rustdoc JSON from docs.rs...
-    URL: https://docs.rs/crate/some_unknown_crate/latest/json
-    ");
-    insta::assert_snapshot!(stderr, @"Error: http status: 404");
+    insta::assert_snapshot!(stdout, @"");
+    insta::assert_snapshot!(stderr, @"http status: 404");
 }
 
 #[test]
@@ -175,7 +149,7 @@ fn test_cli_missing_arguments() {
     );
 
     insta::assert_snapshot!(stdout, @"");
-    insta::assert_snapshot!(stderr, @"Error: Missing required argument: SYMBOL");
+    insta::assert_snapshot!(stderr, @"Missing required argument: SYMBOL");
 }
 
 #[test]
