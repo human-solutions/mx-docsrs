@@ -78,6 +78,7 @@ pub fn find_items_by_name(krate: &rustdoc_types::Crate, name: &str) -> Vec<Strin
     results
 }
 
+#[allow(dead_code)]
 /// Helper function to find all Use items (re-exports) in the crate
 pub fn find_reexports(krate: &rustdoc_types::Crate) -> Vec<(String, rustdoc_types::Use)> {
     let mut results = Vec::new();

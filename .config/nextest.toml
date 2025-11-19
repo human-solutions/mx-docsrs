@@ -1,0 +1,13 @@
+# Nextest configuration
+
+# Enable experimental setup scripts feature
+experimental = ["setup-scripts"]
+
+# Define the setup script
+[scripts.setup.generate-test-docs]
+command = "scripts/generate-test-docs.sh"
+
+# Run the setup script for all tests
+[[profile.default.scripts]]
+filter = "all()"
+setup = "generate-test-docs"
