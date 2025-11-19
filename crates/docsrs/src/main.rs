@@ -3,14 +3,14 @@ mod crate_spec;
 mod doc;
 mod docfetch;
 mod ext;
-mod terminal_render;
+mod fmt;
 mod version_resolver;
 
 use anyhow::Result;
 use cli::Cli;
 use doc::extract::extract_doc;
 use docfetch::{clear_cache, fetch_docs};
-use terminal_render::{render_search_results_list, render_to_terminal};
+use fmt::{render_search_results_list, render_to_terminal};
 use version_resolver::VersionResolver;
 
 fn main() -> Result<()> {
