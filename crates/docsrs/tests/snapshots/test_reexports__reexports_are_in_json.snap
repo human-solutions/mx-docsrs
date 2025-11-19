@@ -1,0 +1,279 @@
+---
+source: crates/docsrs/tests/test_reexports.rs
+expression: reexports
+---
+[
+    (
+        "<unknown>",
+        Use {
+            source: "crate::InnerStruct",
+            name: "IntermediateStruct",
+            id: Some(
+                Id(
+                    2,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "crate::RootStruct",
+            name: "RootStruct",
+            id: Some(
+                Id(
+                    88,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "crate::inner",
+            name: "inner",
+            id: Some(
+                Id(
+                    64,
+                ),
+            ),
+            is_glob: true,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "deeply::nested::module::DeeplyNestedItem",
+            name: "DeeplyNestedItem",
+            id: Some(
+                Id(
+                    66,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "inner::INNER_CONST",
+            name: "INNER_CONST",
+            id: Some(
+                Id(
+                    62,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "inner::InnerAlias",
+            name: "InnerAlias",
+            id: Some(
+                Id(
+                    63,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "inner::InnerEnum",
+            name: "InnerEnum",
+            id: Some(
+                Id(
+                    45,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "inner::InnerStruct",
+            name: "RenamedStruct",
+            id: Some(
+                Id(
+                    2,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "inner::InnerStruct",
+            name: "InnerStruct",
+            id: Some(
+                Id(
+                    2,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "inner::InnerTrait",
+            name: "InnerTrait",
+            id: Some(
+                Id(
+                    61,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "inner::inner_function",
+            name: "renamed_function",
+            id: Some(
+                Id(
+                    59,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "inner::inner_function",
+            name: "inner_function",
+            id: Some(
+                Id(
+                    59,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "intermediate::IntermediateStruct",
+            name: "ChainedReexport",
+            id: Some(
+                Id(
+                    2,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "internal::Bar",
+            name: "Bar",
+            id: Some(
+                Id(
+                    105,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "internal::Foo",
+            name: "Foo",
+            id: Some(
+                Id(
+                    91,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "private_module::Item",
+            name: "PublicItem",
+            id: Some(
+                Id(
+                    123,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "std::collections::HashMap",
+            name: "HashMap",
+            id: Some(
+                Id(
+                    171,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "std::vec::Vec",
+            name: "MyVec",
+            id: Some(
+                Id(
+                    173,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "traits::MyTrait",
+            name: "MyTrait",
+            id: Some(
+                Id(
+                    143,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "traits::TraitImpl",
+            name: "TraitImpl",
+            id: Some(
+                Id(
+                    146,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+    (
+        "<unknown>",
+        Use {
+            source: "type_aliases::MyType",
+            name: "MyType",
+            id: Some(
+                Id(
+                    140,
+                ),
+            ),
+            is_glob: false,
+        },
+    ),
+]

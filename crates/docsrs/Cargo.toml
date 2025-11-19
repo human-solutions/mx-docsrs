@@ -18,3 +18,6 @@ serde_json.workspace = true
 directories.workspace = true
 colored.workspace = true
 pulldown-cmark.workspace = true
+
+[dev-dependencies]
+insta.workspace = true
