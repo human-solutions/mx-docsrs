@@ -284,13 +284,13 @@ fn test_cli_resolves_anyhow_dependency() {
     insta::assert_snapshot!(stdout, @r"
     Multiple items found. Use the fully qualified name to view a specific item:
     ────────────────────────────────────────────────────────────────────────────────
+      associatedtype anyhow::Error
       fn           anyhow::into_boxed_dyn_error
       fn           anyhow::reallocate_into_boxed_dyn_error_without_backtrace
-      struct       anyhow::Error
       trait        anyhow::context::ext::StdError
     ────────────────────────────────────────────────────────────────────────────────
 
-    Example: docsrs tokio anyhow::into_boxed_dyn_error
+    Example: docsrs tokio anyhow::Error
     ");
     insta::assert_snapshot!(stderr, @"");
 }

@@ -98,7 +98,7 @@ expression: reexports
         "<unknown>",
         Use {
             source: "inner::InnerStruct",
-            name: "RenamedStruct",
+            name: "InnerStruct",
             id: Some(
                 Id(
                     2,
@@ -111,7 +111,7 @@ expression: reexports
         "<unknown>",
         Use {
             source: "inner::InnerStruct",
-            name: "InnerStruct",
+            name: "RenamedStruct",
             id: Some(
                 Id(
                     2,
@@ -137,7 +137,7 @@ expression: reexports
         "<unknown>",
         Use {
             source: "inner::inner_function",
-            name: "renamed_function",
+            name: "inner_function",
             id: Some(
                 Id(
                     59,
@@ -150,7 +150,7 @@ expression: reexports
         "<unknown>",
         Use {
             source: "inner::inner_function",
-            name: "inner_function",
+            name: "renamed_function",
             id: Some(
                 Id(
                     59,

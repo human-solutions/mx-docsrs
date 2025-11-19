@@ -95,5 +95,23 @@ pub fn find_reexports(krate: &rustdoc_types::Crate) -> Vec<(String, rustdoc_type
         }
     }
 
+    // Sort for deterministic output (fixes HashMap iteration non-determinism)
+    results.sort_by(|a, b| {
+        // First compare by path
+        let path_cmp = a.0.cmp(&b.0);
+        if path_cmp != std::cmp::Ordering::Equal {
+            return path_cmp;
+        }
+
+        // Then by source
+        let source_cmp = a.1.source.cmp(&b.1.source);
+        if source_cmp != std::cmp::Ordering::Equal {
+            return source_cmp;
+        }
+
+        // Finally by name
+        a.1.name.cmp(&b.1.name)
+    });
+
     results
 }

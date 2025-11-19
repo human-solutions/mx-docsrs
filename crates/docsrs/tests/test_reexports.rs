@@ -42,7 +42,7 @@ fn test_reexport_simple() {
             "<unknown>",
             Use {
                 source: "inner::InnerStruct",
-                name: "RenamedStruct",
+                name: "InnerStruct",
                 id: Some(
                     Id(
                         2,
