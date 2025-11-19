@@ -4,6 +4,7 @@ use rustdoc_types::Crate;
 use crate::color::Color;
 
 mod crate_wrapper;
+mod impl_kind;
 mod intermediate_public_item;
 mod item_processor;
 mod nameable_item;
@@ -11,6 +12,7 @@ mod path_component;
 mod public_item;
 mod render;
 mod tokens;
+mod unprocessed_item;
 
 use item_processor::public_api_in_crate;
 use public_item::PublicItem;
