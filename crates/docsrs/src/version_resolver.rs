@@ -74,6 +74,35 @@ impl VersionResolver {
 
         None
     }
+
+    /// Check if a crate is a local workspace member
+    pub fn is_local_crate(&self, crate_name: &str) -> bool {
+        self.metadata.workspace_members.iter().any(|member_id| {
+            self.metadata
+                .packages
+                .iter()
+                .any(|pkg| pkg.id == *member_id && pkg.name == crate_name)
+        })
+    }
+
+    /// Get the path to the rustdoc JSON file for a local workspace crate
+    ///
+    /// Returns None if the crate is not a workspace member or if the path doesn't exist
+    pub fn get_local_crate_doc_path(&self, crate_name: &str) -> Option<PathBuf> {
+        if !self.is_local_crate(crate_name) {
+            return None;
+        }
+
+        // Convert crate-name to crate_name (replace hyphens with underscores for file name)
+        let file_name = crate_name.replace('-', "_");
+        let doc_path = self
+            .metadata
+            .target_directory
+            .join("doc")
+            .join(format!("{}.json", file_name));
+
+        Some(doc_path.into())
+    }
 }
 
 #[cfg(test)]

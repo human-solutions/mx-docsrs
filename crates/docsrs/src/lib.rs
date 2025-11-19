@@ -6,7 +6,7 @@ mod version_resolver;
 
 use clap::Parser;
 use cli::Cli;
-use docfetch::{clear_cache, fetch_docs};
+use docfetch::{clear_cache, fetch_docs, load_local_docs};
 use version_resolver::VersionResolver;
 
 /// Run the CLI with the given arguments and return the output as a string.
@@ -49,36 +49,54 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
         return Ok(output);
     }
 
-    // Require crate_spec and symbol if not clearing cache
+    // Require crate_spec if not clearing cache
     let crate_spec = parsed_args
         .crate_spec
         .ok_or_else(|| anyhow::anyhow!("Missing required argument: CRATE_SPEC"))?;
-    let _symbol = parsed_args
-        .symbol
-        .ok_or_else(|| anyhow::anyhow!("Missing required argument: SYMBOL"))?;
 
-    // Resolve the version
-    let version = if let Some(explicit_version) = crate_spec.version {
-        // Use explicitly provided version
-        explicit_version
-    } else {
-        // Try to resolve from Cargo.toml
-        match VersionResolver::new() {
-            Ok(resolver) => resolver
-                .resolve_version(&crate_spec.name)
-                .unwrap_or_else(|| "latest".to_string()),
-            Err(_) => {
-                // No Cargo.toml found, default to latest
-                "latest".to_string()
-            }
+    // Symbol is optional - if not provided, we'll list all symbols
+    let _symbol = parsed_args.symbol;
+
+    // Check if this is a local workspace crate
+    let local_doc_path = if let Ok(resolver) = VersionResolver::new() {
+        if resolver.is_local_crate(&crate_spec.name) {
+            resolver.get_local_crate_doc_path(&crate_spec.name)
+        } else {
+            None
         }
+    } else {
+        None
     };
 
-    // Determine whether to use cache
-    let use_cache = !parsed_args.no_cache;
+    // Load documentation
+    let krate = if let Some(doc_path) = local_doc_path {
+        // Print immediately since we might panic before returning
+        println!("Local crate found at: {}", doc_path.display());
+        load_local_docs(&doc_path)?
+    } else {
+        // Resolve the version
+        let version = if let Some(explicit_version) = crate_spec.version {
+            // Use explicitly provided version
+            explicit_version
+        } else {
+            // Try to resolve from Cargo.toml
+            match VersionResolver::new() {
+                Ok(resolver) => resolver
+                    .resolve_version(&crate_spec.name)
+                    .unwrap_or_else(|| "latest".to_string()),
+                Err(_) => {
+                    // No Cargo.toml found, default to latest
+                    "latest".to_string()
+                }
+            }
+        };
 
-    // Fetch and search documentation
-    let krate = fetch_docs(&crate_spec.name, &version, use_cache)?;
+        // Determine whether to use cache
+        let use_cache = !parsed_args.no_cache;
+
+        // Fetch documentation from docs.rs
+        fetch_docs(&crate_spec.name, &version, use_cache)?
+    };
 
     doc::extract_list(&krate)
 }

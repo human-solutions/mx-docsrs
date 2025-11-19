@@ -5,13 +5,13 @@ use crate::crate_spec::CrateSpec;
 /// Search for documentation of a symbol in a crate
 #[derive(Parser, Debug)]
 #[command(name = "docsrs")]
-#[command(about = "Search for documentation of a symbol in a crate", long_about = None)]
+#[command(about = "Search for documentation of a symbol in a crate or list all symbols", long_about = None)]
 pub struct Cli {
     /// The crate name to search in, optionally with version (e.g., "serde" or "serde@1.0")
     #[arg(value_parser = parse_crate_spec)]
     pub crate_spec: Option<CrateSpec>,
 
-    /// The symbol to search for
+    /// The symbol to search for (optional - if omitted, lists all symbols)
     pub symbol: Option<String>,
 
     /// Skip cache and download fresh rustdoc JSON

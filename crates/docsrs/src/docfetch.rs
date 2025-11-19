@@ -3,7 +3,18 @@ use directories::ProjectDirs;
 use rustdoc_types::Crate;
 use std::fs;
 use std::io::Read;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+/// Load documentation from a local rustdoc JSON file
+pub fn load_local_docs(path: &Path) -> Result<Crate> {
+    let json_data = fs::read_to_string(path)
+        .with_context(|| format!("Failed to read local rustdoc JSON at {}", path.display()))?;
+
+    let krate: Crate =
+        serde_json::from_str(&json_data).context("Failed to parse local rustdoc JSON")?;
+
+    Ok(krate)
+}
 
 /// Fetch and search documentation from docs.rs
 /// Returns the search results and the parsed crate data
