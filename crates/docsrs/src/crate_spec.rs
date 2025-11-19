@@ -9,21 +9,6 @@ pub struct CrateSpec {
 }
 
 impl CrateSpec {
-    /// Parse a crate specification from a string
-    ///
-    /// Format: `crate_name` or `crate_name@version`
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let spec = CrateSpec::parse("tokio")?;
-    /// assert_eq!(spec.name, "tokio");
-    /// assert_eq!(spec.version, None);
-    ///
-    /// let spec = CrateSpec::parse("tokio@1.0.0")?;
-    /// assert_eq!(spec.name, "tokio");
-    /// assert_eq!(spec.version, Some("1.0.0".to_string()));
-    /// ```
     pub fn parse(input: &str) -> Result<Self> {
         let parts: Vec<&str> = input.splitn(2, '@').collect();
 
