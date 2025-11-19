@@ -1,4 +1,5 @@
 mod cli;
+mod color;
 mod crate_spec;
 mod doc;
 mod docfetch;
@@ -98,5 +99,5 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
         fetch_docs(&crate_spec.name, &version, use_cache)?
     };
 
-    doc::extract_list(&krate)
+    doc::extract_list(&krate, parsed_args.color)
 }

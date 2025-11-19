@@ -1,5 +1,6 @@
 use clap::Parser;
 
+use crate::color::Color;
 use crate::crate_spec::CrateSpec;
 
 /// Search for documentation of a symbol in a crate
@@ -21,6 +22,13 @@ pub struct Cli {
     /// Clear the entire cache directory
     #[arg(long)]
     pub clear_cache: bool,
+
+    /// When to use colors in output.
+    ///
+    /// By default, `--color=auto` is active. Using just `--color` without an
+    /// arg is equivalent to `--color=always`.
+    #[arg(long, value_name = "WHEN", default_value = "auto")]
+    pub color: Color,
 }
 
 fn parse_crate_spec(s: &str) -> Result<CrateSpec, String> {
