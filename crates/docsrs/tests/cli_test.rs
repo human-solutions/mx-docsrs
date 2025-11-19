@@ -1,69 +1,7 @@
-// No longer need to filter cargo noise since we're not running cargo
-
-fn sort_search_results(stdout: &str) -> String {
-    if !stdout.contains("Multiple items found") {
-        return stdout.to_string();
-    }
-
-    let lines: Vec<&str> = stdout.lines().collect();
-    let mut result: Vec<String> = Vec::new();
-    let mut in_results = false;
-    let mut result_lines: Vec<String> = Vec::new();
-    let mut first_item = None;
-
-    for line in lines {
-        if line.contains("────────────────────────────────────────")
-        {
-            if in_results {
-                // End of results section - sort and add them
-                result_lines.sort();
-                // Capture the first item for the example line
-                if let Some(first) = result_lines.first() {
-                    let trimmed = first.trim();
-                    if let Some(item_name) = trimmed.split_whitespace().last() {
-                        first_item = Some(item_name.to_string());
-                    }
-                }
-                result.extend(result_lines.drain(..));
-                result.push(line.to_string());
-                in_results = false;
-            } else {
-                // Start of results section
-                result.push(line.to_string());
-                in_results = true;
-            }
-        } else if in_results {
-            result_lines.push(line.to_string());
-        } else if line.trim().starts_with("Example:") {
-            // Replace the example line with the first sorted item
-            if let Some(item) = &first_item {
-                // Example line format: "Example: docsrs <crate> <item>"
-                // Keep everything except the last item
-                let parts: Vec<&str> = line.split_whitespace().collect();
-                if parts.len() >= 3 {
-                    let prefix: Vec<&str> = parts[..parts.len() - 1].to_vec();
-                    result.push(format!("{} {}", prefix.join(" "), item));
-                } else {
-                    result.push(line.to_string());
-                }
-            } else {
-                result.push(line.to_string());
-            }
-        } else {
-            result.push(line.to_string());
-        }
-    }
-
-    result.join("\n")
-}
-
 fn run_cli(args: &[&str]) -> (String, String, bool) {
     // Call the library function directly
     match mx_docsrs::run_cli(args) {
-        Ok(stdout) => {
-            let stdout = sort_search_results(&stdout);
-            (stdout, String::new(), true)
-        }
+        Ok(stdout) => (stdout, String::new(), true),
         Err(stderr) => (String::new(), stderr, false),
     }
 }
@@ -72,10 +10,6 @@ fn run_cli(args: &[&str]) -> (String, String, bool) {
 fn test_cli_with_explicit_version() {
     let (stdout, stderr, success) = run_cli(&["tokio@latest", "spawn"]);
     assert!(success, "CLI should succeed");
-    assert!(
-        stdout.contains("Multiple items found") || stdout.contains("fn:"),
-        "Should show results"
-    );
 
     insta::assert_snapshot!(stdout, @r"
     Multiple items found. Use the fully qualified name to view a specific item:
@@ -104,12 +38,7 @@ fn test_cli_with_explicit_version() {
 fn test_cli_with_crate_in_dependencies() {
     let (stdout, stderr, success) = run_cli(&["anyhow", "Error"]);
     assert!(success, "CLI should succeed");
-    assert!(
-        stdout.contains("Multiple items found")
-            || stdout.contains("struct:")
-            || stdout.contains("Error"),
-        "Should show results for Error"
-    );
+    assert!(stderr.is_empty());
 
     insta::assert_snapshot!(stdout, @r"
     Multiple items found. Use the fully qualified name to view a specific item:
@@ -122,19 +51,18 @@ fn test_cli_with_crate_in_dependencies() {
 
     Example: docsrs tokio anyhow::Error
     ");
-    insta::assert_snapshot!(stderr, @"");
 }
 
 #[test]
 fn test_cli_with_unknown_crate() {
     let (stdout, stderr, success) = run_cli(&["some_unknown_crate", "symbol"]);
     assert!(!success, "CLI should fail for unknown crate");
+    assert!(stdout.is_empty());
     assert!(
         stderr.contains("Failed to fetch") || stderr.contains("404") || stderr.contains("error"),
         "Should show error for unknown crate"
     );
 
-    insta::assert_snapshot!(stdout, @"");
     insta::assert_snapshot!(stderr, @"http status: 404");
 }
 
@@ -142,13 +70,13 @@ fn test_cli_with_unknown_crate() {
 fn test_cli_missing_arguments() {
     let (stdout, stderr, success) = run_cli(&["clap"]);
     assert!(!success, "CLI should fail with missing arguments");
+    assert!(stdout.is_empty());
     let output = format!("{}{}", stdout, stderr);
     assert!(
         output.contains("required arguments were not provided") || output.contains("SYMBOL"),
         "Should show error about missing symbol argument"
     );
 
-    insta::assert_snapshot!(stdout, @"");
     insta::assert_snapshot!(stderr, @"Missing required argument: SYMBOL");
 }
 
@@ -156,13 +84,8 @@ fn test_cli_missing_arguments() {
 fn test_cli_empty_crate_name() {
     let (stdout, stderr, success) = run_cli(&["", "symbol"]);
     assert!(!success, "CLI should fail with empty crate name");
-    let output = format!("{}{}", stdout, stderr);
-    assert!(
-        output.contains("empty"),
-        "Should show error about empty name"
-    );
+    assert!(stdout.is_empty());
 
-    insta::assert_snapshot!(stdout, @"");
     insta::assert_snapshot!(stderr, @r"
     error: invalid value '' for '[CRATE_SPEC]': Crate name cannot be empty
 
@@ -174,13 +97,8 @@ fn test_cli_empty_crate_name() {
 fn test_cli_empty_version() {
     let (stdout, stderr, success) = run_cli(&["crate@", "symbol"]);
     assert!(!success, "CLI should fail with empty version");
-    let output = format!("{}{}", stdout, stderr);
-    assert!(
-        output.contains("empty"),
-        "Should show error about empty version"
-    );
+    assert!(stdout.is_empty());
 
-    insta::assert_snapshot!(stdout, @"");
     insta::assert_snapshot!(stderr, @r"
     error: invalid value 'crate@' for '[CRATE_SPEC]': Version cannot be empty after '@'
 
@@ -191,18 +109,7 @@ fn test_cli_empty_version() {
 #[test]
 fn test_cli_help() {
     let (stdout, stderr, success) = run_cli(&["--help"]);
-    let output = format!("{}{}", stdout, stderr);
     assert!(success, "Help should succeed");
-    assert!(output.contains("docsrs"), "Should mention binary name");
-    assert!(
-        output.contains("CRATE_SPEC"),
-        "Should mention crate spec argument"
-    );
-    assert!(output.contains("SYMBOL"), "Should mention symbol argument");
-    assert!(
-        output.contains("@version") || output.contains("optionally"),
-        "Should mention optional version syntax"
-    );
 
     insta::assert_snapshot!(stdout, @r#"
     Search for documentation of a symbol in a crate
@@ -225,10 +132,6 @@ fn test_cli_help() {
 fn test_cli_resolves_cargo_metadata_dependency() {
     let (stdout, stderr, success) = run_cli(&["cargo_metadata", "MetadataCommand"]);
     assert!(success, "CLI should succeed");
-    assert!(
-        stdout.contains("struct:") || stdout.contains("MetadataCommand"),
-        "Should show MetadataCommand"
-    );
 
     insta::assert_snapshot!(stdout, @r"
     ────────────────────────────────────────────────────────────
@@ -248,12 +151,7 @@ fn test_cli_resolves_cargo_metadata_dependency() {
 fn test_cli_resolves_anyhow_dependency() {
     let (stdout, stderr, success) = run_cli(&["anyhow", "Error"]);
     assert!(success, "CLI should succeed");
-    assert!(
-        stdout.contains("struct:")
-            || stdout.contains("Error")
-            || stdout.contains("Multiple items found"),
-        "Should show Error results"
-    );
+    assert!(stderr.is_empty());
 
     insta::assert_snapshot!(stdout, @r"
     Multiple items found. Use the fully qualified name to view a specific item:
@@ -266,19 +164,13 @@ fn test_cli_resolves_anyhow_dependency() {
 
     Example: docsrs tokio anyhow::Error
     ");
-    insta::assert_snapshot!(stderr, @"");
 }
 
 #[test]
 fn test_cli_complex_version_requirement() {
     let (stdout, stderr, success) = run_cli(&["serde@latest", "Serialize"]);
     assert!(success, "CLI should succeed");
-    assert!(
-        stdout.contains("trait:")
-            || stdout.contains("Serialize")
-            || stdout.contains("Multiple items found"),
-        "Should show Serialize results"
-    );
+    assert!(stderr.is_empty());
 
     insta::assert_snapshot!(stdout, @r"
     Multiple items found. Use the fully qualified name to view a specific item:
@@ -408,5 +300,4 @@ fn test_cli_complex_version_requirement() {
 
     Example: docsrs tokio serde::Deserializer
     ");
-    insta::assert_snapshot!(stderr, @"");
 }
