@@ -2,15 +2,14 @@ mod cli;
 mod crate_spec;
 mod doc;
 mod docfetch;
-mod docrender;
 mod ext;
 mod terminal_render;
 mod version_resolver;
 
 use anyhow::Result;
 use cli::Cli;
+use doc::extract::extract_doc;
 use docfetch::{clear_cache, fetch_docs};
-use docrender::extract_doc;
 use terminal_render::{render_search_results_list, render_to_terminal};
 use version_resolver::VersionResolver;
 

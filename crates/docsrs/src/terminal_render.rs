@@ -1,4 +1,4 @@
-use crate::docrender::{DocSection, RenderedDoc};
+use crate::doc::extract::{DocSection, RenderedDoc};
 use colored::*;
 use pulldown_cmark::{Event, HeadingLevel, Parser, Tag, TagEnd};
 
