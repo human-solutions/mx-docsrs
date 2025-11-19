@@ -2,6 +2,7 @@ mod cli;
 mod crate_spec;
 mod docfetch;
 mod docrender;
+mod ext;
 mod terminal_render;
 mod version_resolver;
 
