@@ -1,6 +1,6 @@
 mod cli;
 mod crate_spec;
-mod doc;
+pub mod doc;
 mod docfetch;
 mod ext;
 mod fmt;

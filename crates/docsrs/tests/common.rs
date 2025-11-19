@@ -1,3 +1,5 @@
+use mx_docsrs::doc::search::{DocResult, search_items};
+use rustdoc_types::Crate;
 use std::path::PathBuf;
 
 /// Helper function to get the path to rustdoc JSON for a test crate.
@@ -32,4 +34,44 @@ pub fn get_rustdoc_json_path(crate_name: &str) -> PathBuf {
     }
 
     json_path
+}
+
+/// Load rustdoc JSON for a test crate and parse it into a Crate object.
+pub fn load_rustdoc_json(crate_name: &str) -> Crate {
+    let json_path = get_rustdoc_json_path(crate_name);
+    let json_content = std::fs::read_to_string(&json_path)
+        .unwrap_or_else(|e| panic!("Failed to read JSON file at {:?}: {}", json_path, e));
+
+    serde_json::from_str(&json_content)
+        .unwrap_or_else(|e| panic!("Failed to parse JSON file at {:?}: {}", json_path, e))
+}
+
+/// Search for items in a test crate using the library search function.
+/// Returns the search results.
+pub fn search_test_crate(crate_name: &str, query: &str) -> Vec<DocResult> {
+    let krate = load_rustdoc_json(crate_name);
+    search_items(&krate, query, crate_name)
+}
+
+/// Format search results as a string for snapshot testing.
+/// Each result is displayed on a single line using the Display implementation.
+pub fn format_results(results: &[DocResult]) -> String {
+    if results.is_empty() {
+        String::from("(no results)")
+    } else {
+        results
+            .iter()
+            .map(|r| r.to_string())
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+}
+
+/// Helper to run the CLI and return (stdout, stderr, success)
+#[allow(dead_code)]
+pub fn run_cli(args: &[&str]) -> (String, String, bool) {
+    match mx_docsrs::run_cli(args) {
+        Ok(stdout) => (stdout, String::new(), true),
+        Err(stderr) => (String::new(), stderr, false),
+    }
 }

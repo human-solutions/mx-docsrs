@@ -1,4 +1,5 @@
 use rustdoc_types::{Crate, Id, ItemEnum};
+use std::fmt;
 
 /// Represents a search result from the documentation
 #[derive(Debug)]
@@ -7,6 +8,17 @@ pub struct DocResult {
     pub name: String,
     pub item_type: String,
     pub path: Vec<String>,
+}
+
+impl fmt::Display for DocResult {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let path_str = if self.path.is_empty() {
+            String::new()
+        } else {
+            format!("{}::", self.path.join("::"))
+        };
+        write!(f, "{} {}{}", self.item_type, path_str, self.name)
+    }
 }
 
 /// Search through rustdoc items for matches

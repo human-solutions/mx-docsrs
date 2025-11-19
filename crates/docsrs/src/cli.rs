@@ -23,7 +23,6 @@ pub struct Cli {
     pub clear_cache: bool,
 }
 
-
 fn parse_crate_spec(s: &str) -> Result<CrateSpec, String> {
     CrateSpec::parse(s).map_err(|e| e.to_string())
 }

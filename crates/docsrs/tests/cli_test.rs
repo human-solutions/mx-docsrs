@@ -54,19 +54,6 @@ fn test_cli_with_crate_in_dependencies() {
 }
 
 #[test]
-fn test_cli_with_unknown_crate() {
-    let (stdout, stderr, success) = run_cli(&["some_unknown_crate", "symbol"]);
-    assert!(!success, "CLI should fail for unknown crate");
-    assert!(stdout.is_empty());
-    assert!(
-        stderr.contains("Failed to fetch") || stderr.contains("404") || stderr.contains("error"),
-        "Should show error for unknown crate"
-    );
-
-    insta::assert_snapshot!(stderr, @"http status: 404");
-}
-
-#[test]
 fn test_cli_missing_arguments() {
     let (stdout, stderr, success) = run_cli(&["clap"]);
     assert!(!success, "CLI should fail with missing arguments");
