@@ -5,9 +5,10 @@ use crate::{color::Color, doc::item_processor::ItemProcessor};
 
 mod crate_wrapper;
 mod doc_formatter;
-mod impl_kind;
+pub(crate) mod impl_kind;
 mod intermediate_public_item;
 mod item_processor;
+mod list_item;
 mod matcher;
 mod nameable_item;
 mod output;

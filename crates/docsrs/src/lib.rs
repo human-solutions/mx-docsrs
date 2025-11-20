@@ -3,6 +3,7 @@ mod color;
 mod crate_spec;
 mod doc;
 mod docfetch;
+mod ext;
 mod version_resolver;
 
 use clap::Parser;
