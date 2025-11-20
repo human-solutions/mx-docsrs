@@ -10,6 +10,7 @@ mod intermediate_public_item;
 mod item_processor;
 mod matcher;
 mod nameable_item;
+mod output;
 mod path_component;
 mod public_item;
 mod render;

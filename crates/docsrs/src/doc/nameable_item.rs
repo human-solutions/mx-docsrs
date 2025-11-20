@@ -40,11 +40,11 @@ impl NameableItem<'_> {
             // In order for items of impls to be grouped together with its impl,
             // add the "name" of the impl to the sorting prefix. Ignore `!` when
             // sorting however, because that just messes the expected order up.
-            sortable_name.push_str(&crate::doc::tokens::tokens_to_string(&context.render_impl(
-                impl_,
-                &[],
-                true, /* disregard_negativity */
-            )));
+            sortable_name.push_str(&crate::doc::tokens::tokens_to_string(
+                context
+                    .render_impl(impl_, &[], true /* disregard_negativity */)
+                    .tokens(),
+            ));
 
             // If this is an inherent impl, additionally add the concatenated
             // names of all associated items to the "name" of the impl. This makes

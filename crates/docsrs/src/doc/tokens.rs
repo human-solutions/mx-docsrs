@@ -32,50 +32,6 @@ pub enum Token {
 }
 
 impl Token {
-    /// A symbol, like `=` or `::<`
-    pub(crate) fn symbol(text: impl Into<String>) -> Self {
-        Self::Symbol(text.into())
-    }
-    /// A qualifier, like `pub` or `const`
-    pub(crate) fn qualifier(text: impl Into<String>) -> Self {
-        Self::Qualifier(text.into())
-    }
-    /// The kind of an item, like `function` or `trait`
-    pub(crate) fn kind(text: impl Into<String>) -> Self {
-        Self::Kind(text.into())
-    }
-    /// An identifier, like variable names or parts of the path of an item
-    pub(crate) fn identifier(text: impl Into<String>) -> Self {
-        Self::Identifier(text.into())
-    }
-    /// The identifier self, the text can be `self` or `Self`
-    pub(crate) fn self_(text: impl Into<String>) -> Self {
-        Self::Self_(text.into())
-    }
-    /// The identifier for a function
-    pub(crate) fn function(text: impl Into<String>) -> Self {
-        Self::Function(text.into())
-    }
-    /// A lifetime including the apostrophe `'`, like `'a`
-    pub(crate) fn lifetime(text: impl Into<String>) -> Self {
-        Self::Lifetime(text.into())
-    }
-    /// A keyword, like `impl`
-    pub(crate) fn keyword(text: impl Into<String>) -> Self {
-        Self::Keyword(text.into())
-    }
-    /// A generic, like `T`
-    pub(crate) fn generic(text: impl Into<String>) -> Self {
-        Self::Generic(text.into())
-    }
-    /// A primitive type, like `usize`
-    pub(crate) fn primitive(text: impl Into<String>) -> Self {
-        Self::Primitive(text.into())
-    }
-    /// A type, like `Iterator`
-    pub(crate) fn type_(text: impl Into<String>) -> Self {
-        Self::Type(text.into())
-    }
     /// Get the inner text of this token
     pub fn text(&self) -> &str {
         match self {

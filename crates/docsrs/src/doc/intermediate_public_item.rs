@@ -59,6 +59,6 @@ impl<'c> IntermediatePublicItem<'c> {
     }
 
     pub fn render_token_stream(&self, context: &RenderingContext) -> Vec<Token> {
-        context.token_stream(self)
+        context.token_stream(self).into_tokens()
     }
 }
