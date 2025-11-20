@@ -56,7 +56,7 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
         .ok_or_else(|| anyhow::anyhow!("Missing required argument: CRATE_SPEC"))?;
 
     // Symbol is optional - if not provided, we'll list all symbols
-    let _symbol = parsed_args.symbol;
+    let symbol = parsed_args.symbol;
 
     // Check if this is a local workspace crate
     let local_doc_path = if let Ok(resolver) = VersionResolver::new() {
@@ -99,5 +99,5 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
         fetch_docs(&crate_spec.name, &version, use_cache)?
     };
 
-    doc::extract_list(&krate, parsed_args.color)
+    doc::extract_list(&krate, parsed_args.color, symbol.as_deref())
 }
