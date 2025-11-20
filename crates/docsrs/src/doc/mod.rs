@@ -1,20 +1,22 @@
 use anyhow::Result;
 use rustdoc_types::Crate;
 
-use crate::{color::Color, doc::public_item::public_api_in_crate, proc::ItemProcessor};
+use crate::{
+    color::Color,
+    doc::public_item::public_api_in_crate,
+    fmt::{tokens_to_colored_string, tokens_to_string},
+    proc::ItemProcessor,
+};
 
 mod doc_formatter;
 pub(crate) mod impl_kind;
 mod matcher;
-mod output;
 mod public_item;
 mod render;
-mod tokens;
 
 use doc_formatter::format_doc;
 use matcher::match_items;
 use public_item::PublicItem;
-use tokens::{tokens_to_colored_string, tokens_to_string};
 
 pub fn extract_list(krate: &Crate, color: Color, pattern: Option<&str>) -> Result<String> {
     let item_processor = ItemProcessor::process(krate);

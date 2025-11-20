@@ -4,6 +4,7 @@ mod crate_spec;
 mod doc;
 mod docfetch;
 mod ext;
+mod fmt;
 mod proc;
 mod version_resolver;
 

@@ -1,5 +1,6 @@
+use crate::fmt::tokens_to_string;
+
 use super::public_item::PublicItem;
-use super::tokens::tokens_to_string;
 
 /// Matches items based on a pattern using suffix-first, then substring fallback strategy.
 ///
@@ -57,7 +58,7 @@ pub fn match_items(items: Vec<PublicItem>, pattern: &str) -> Vec<PublicItem> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::doc::tokens::Token;
+    use crate::fmt::Token;
     use rustdoc_types::Id;
 
     fn create_test_item(path: Vec<&str>, rendered: &str) -> PublicItem {

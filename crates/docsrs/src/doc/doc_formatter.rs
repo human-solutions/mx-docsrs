@@ -2,8 +2,10 @@ use anyhow::Result;
 use rustdoc_types::Crate;
 
 use super::public_item::PublicItem;
-use super::tokens::{tokens_to_colored_string, tokens_to_string};
-use crate::color::Color;
+use crate::{
+    color::Color,
+    fmt::{tokens_to_colored_string, tokens_to_string},
+};
 
 /// Format documentation for a single PublicItem
 pub fn format_doc(krate: &Crate, item: &PublicItem, color: Color) -> Result<String> {

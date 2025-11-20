@@ -6,8 +6,8 @@ use std::fmt::Display;
 use std::hash::Hash;
 
 use crate::doc::render::RenderingContext;
-use crate::doc::tokens::Token;
-use crate::doc::tokens::tokens_to_string;
+use crate::fmt::Token;
+use crate::fmt::tokens_to_string;
 use crate::proc::IntermediatePublicItem;
 use crate::proc::ItemProcessor;
 use crate::proc::NameableItem;
@@ -129,7 +129,7 @@ fn sortable_name(nameable: &NameableItem, context: &RenderingContext) -> String 
         // In order for items of impls to be grouped together with its impl,
         // add the "name" of the impl to the sorting prefix. Ignore `!` when
         // sorting however, because that just messes the expected order up.
-        sortable_name.push_str(&crate::doc::tokens::tokens_to_string(
+        sortable_name.push_str(&tokens_to_string(
             context
                 .render_impl(impl_, &[], true /* disregard_negativity */)
                 .tokens(),

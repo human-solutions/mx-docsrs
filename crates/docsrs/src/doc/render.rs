@@ -1,6 +1,6 @@
 #![allow(clippy::unused_self)]
 use crate::{
-    doc::output::Output,
+    fmt::Output,
     proc::{IntermediatePublicItem, NameableItem, PathComponent},
 };
 use std::{borrow::Cow, cmp::Ordering, collections::HashMap};
