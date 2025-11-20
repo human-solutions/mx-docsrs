@@ -1,10 +1,11 @@
-use super::impl_kind::ImplKind;
-use super::unprocessed_item::UnprocessedItem;
-use crate::doc::{
-    crate_wrapper::CrateWrapper, intermediate_public_item::IntermediatePublicItem,
-    path_component::PathComponent, public_item::PublicItem, render::RenderingContext,
+use crate::{
+    doc::impl_kind::ImplKind,
+    ext::item_ext::ItemExt,
+    proc::{
+        crate_wrapper::CrateWrapper, intermediate_public_item::IntermediatePublicItem,
+        path_component::PathComponent, unprocessed_item::UnprocessedItem,
+    },
 };
-use crate::ext::item_ext::ItemExt;
 use rustdoc_types::{Crate, Id, Impl, Item, ItemEnum, Module, Type, Use};
 use std::{
     collections::{HashMap, VecDeque},
@@ -20,20 +21,23 @@ pub struct ItemProcessor<'c> {
     work_queue: VecDeque<UnprocessedItem<'c>>,
 
     /// The output. A list of processed items.
-    output: Vec<IntermediatePublicItem<'c>>,
+    pub output: Vec<IntermediatePublicItem<'c>>,
 }
 
 impl<'c> ItemProcessor<'c> {
-    pub(crate) fn new(crate_: &'c Crate) -> Self {
-        ItemProcessor {
+    pub(crate) fn process(crate_: &'c Crate) -> Self {
+        let mut me = ItemProcessor {
             crate_: CrateWrapper::new(crate_),
             work_queue: VecDeque::new(),
             output: vec![],
-        }
+        };
+        me.add_to_work_queue(vec![], None, crate_.root);
+        me.run();
+        me
     }
 
     /// Adds an item to the front of the work queue.
-    pub fn add_to_work_queue(
+    fn add_to_work_queue(
         &mut self,
         parent_path: Vec<PathComponent<'c>>,
         parent_id: Option<Id>,
@@ -47,7 +51,7 @@ impl<'c> ItemProcessor<'c> {
     }
 
     /// Processes the entire work queue.
-    pub fn run(&mut self) {
+    fn run(&mut self) {
         while let Some(unprocessed_item) = self.work_queue.pop_front() {
             if let Some(item) = self.crate_.get_item(unprocessed_item.id) {
                 self.process_any_item(item, unprocessed_item);
@@ -212,7 +216,7 @@ impl<'c> ItemProcessor<'c> {
     }
 
     /// Map IDs to their public items.
-    fn id_to_items(&self) -> HashMap<&Id, Vec<&IntermediatePublicItem<'_>>> {
+    pub fn id_to_items(&self) -> HashMap<&Id, Vec<&IntermediatePublicItem<'_>>> {
         let mut id_to_items: HashMap<&Id, Vec<&IntermediatePublicItem<'_>>> = HashMap::new();
         for finished_item in &self.output {
             id_to_items
@@ -222,21 +226,4 @@ impl<'c> ItemProcessor<'c> {
         }
         id_to_items
     }
-}
-
-/// Extract public API from a crate.
-pub(crate) fn public_api_in_crate(
-    crate_: &Crate,
-    item_processor: &ItemProcessor,
-) -> Vec<PublicItem> {
-    let context = RenderingContext {
-        crate_,
-        id_to_items: item_processor.id_to_items(),
-    };
-
-    item_processor
-        .output
-        .iter()
-        .map(|item| PublicItem::from_intermediate_public_item(&context, item))
-        .collect::<Vec<_>>()
 }

@@ -4,6 +4,7 @@ mod crate_spec;
 mod doc;
 mod docfetch;
 mod ext;
+mod proc;
 mod version_resolver;
 
 use clap::Parser;

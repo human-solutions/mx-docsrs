@@ -1,8 +1,8 @@
 #![allow(clippy::unused_self)]
-use crate::doc::intermediate_public_item::IntermediatePublicItem;
-use crate::doc::nameable_item::NameableItem;
-use crate::doc::output::Output;
-use crate::doc::path_component::PathComponent;
+use crate::{
+    doc::output::Output,
+    proc::{IntermediatePublicItem, NameableItem, PathComponent},
+};
 use std::{borrow::Cow, cmp::Ordering, collections::HashMap};
 
 use rustdoc_types::{

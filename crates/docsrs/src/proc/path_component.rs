@@ -1,6 +1,6 @@
 use rustdoc_types::Type;
 
-use crate::doc::nameable_item::NameableItem;
+use crate::proc::nameable_item::NameableItem;
 
 /// A public item in a public API can only be referenced via a path. For example
 /// `mod_a::mod_b::StructC`. A `PathComponent` represents one component of such

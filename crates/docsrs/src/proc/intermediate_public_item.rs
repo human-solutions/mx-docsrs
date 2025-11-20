@@ -1,10 +1,6 @@
 use rustdoc_types::{Id, Item};
 
-use crate::doc::nameable_item::NameableItem;
-use crate::doc::path_component::PathComponent;
-use crate::doc::public_item::PublicItemPath;
-use crate::doc::render::RenderingContext;
-use crate::doc::tokens::Token;
+use crate::proc::path_component::PathComponent;
 
 /// This struct represents one public item of a crate, but in intermediate form.
 /// Conceptually it wraps a single [`Item`] even though the path to the item
@@ -46,19 +42,7 @@ impl<'c> IntermediatePublicItem<'c> {
         self.id
     }
 
-    /// See [`crate::doc::item_processor::sorting_prefix()`] docs for an explanation why we have this.
-    pub fn sortable_path(&self, context: &RenderingContext) -> PublicItemPath {
-        self.path()
-            .iter()
-            .map(|p| NameableItem::sortable_name(&p.item, context))
-            .collect()
-    }
-
     pub fn path_contains_renamed_item(&self) -> bool {
         self.path().iter().any(|m| m.item.overridden_name.is_some())
-    }
-
-    pub fn render_token_stream(&self, context: &RenderingContext) -> Vec<Token> {
-        context.token_stream(self).into_tokens()
     }
 }
