@@ -34,7 +34,7 @@ impl<'c> ItemProcessor<'c> {
     }
 
     /// Adds an item to the front of the work queue.
-    fn add_to_work_queue(
+    pub fn add_to_work_queue(
         &mut self,
         parent_path: Vec<PathComponent<'c>>,
         parent_id: Option<Id>,
@@ -48,7 +48,7 @@ impl<'c> ItemProcessor<'c> {
     }
 
     /// Processes the entire work queue.
-    fn run(&mut self) {
+    pub fn run(&mut self) {
         while let Some(unprocessed_item) = self.work_queue.pop_front() {
             if let Some(item) = self.crate_.get_item(unprocessed_item.id) {
                 self.process_any_item(item, unprocessed_item);
@@ -303,11 +303,10 @@ pub fn impls_for_item(item: &Item) -> Option<&[Id]> {
 }
 
 /// Extract public API from a crate.
-pub(crate) fn public_api_in_crate(crate_: &Crate) -> Vec<PublicItem> {
-    let mut item_processor = ItemProcessor::new(crate_);
-    item_processor.add_to_work_queue(vec![], None, crate_.root);
-    item_processor.run();
-
+pub(crate) fn public_api_in_crate(
+    crate_: &Crate,
+    item_processor: &ItemProcessor,
+) -> Vec<PublicItem> {
     let context = RenderingContext {
         crate_,
         id_to_items: item_processor.id_to_items(),

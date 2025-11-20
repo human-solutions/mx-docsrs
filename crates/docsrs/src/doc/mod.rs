@@ -1,7 +1,7 @@
 use anyhow::Result;
 use rustdoc_types::Crate;
 
-use crate::color::Color;
+use crate::{color::Color, doc::item_processor::ItemProcessor};
 
 mod crate_wrapper;
 mod doc_formatter;
@@ -24,7 +24,12 @@ use public_item::PublicItem;
 use tokens::{tokens_to_colored_string, tokens_to_string};
 
 pub fn extract_list(krate: &Crate, color: Color, pattern: Option<&str>) -> Result<String> {
-    let mut items = public_api_in_crate(krate);
+    let mut item_processor = ItemProcessor::new(krate);
+    item_processor.add_to_work_queue(vec![], None, krate.root);
+    item_processor.run();
+
+    let mut items = public_api_in_crate(krate, &item_processor);
+
     items.sort_by(PublicItem::grouping_cmp);
 
     // Apply pattern matching if provided
