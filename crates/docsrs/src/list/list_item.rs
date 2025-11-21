@@ -73,6 +73,12 @@ pub struct ListItem<'c> {
 impl<'c> ListItem<'c> {
     pub fn from_intermediate(intermediate: &IntermediatePublicItem<'c>) -> Option<Self> {
         let kind = EntryKind::from_item_enum(&intermediate.item().inner)?;
+
+        // Skip items whose path contains hidden components (e.g., impl methods)
+        if intermediate.path().iter().any(|seg| seg.hide) {
+            return None;
+        }
+
         let module = intermediate
             .path()
             .iter()
