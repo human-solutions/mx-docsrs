@@ -64,7 +64,7 @@ impl<'c> EntryKind<'c> {
 /// of the public API of a crate.
 #[derive(Clone)]
 pub struct ListItem<'c> {
-    module: Vec<String>,
+    module: Vec<(String, EntryKind<'c>)>,
     pub path: String,
     kind: EntryKind<'c>,
     pub id: Id,
@@ -82,10 +82,18 @@ impl<'c> ListItem<'c> {
         let module = intermediate
             .path()
             .iter()
-            .filter_map(|seg| seg.item.name().map(|n| n.to_string()))
-            .collect::<Vec<String>>();
+            .filter_map(|seg| {
+                let name = seg.item.name()?.to_string();
+                let kind = EntryKind::from_item_enum(&seg.item.item.inner)?;
+                Some((name, kind))
+            })
+            .collect::<Vec<(String, EntryKind<'c>)>>();
 
-        let path = module.join("::");
+        let path = module
+            .iter()
+            .map(|(name, _)| name.as_str())
+            .collect::<Vec<_>>()
+            .join("::");
 
         Some(Self {
             module,
@@ -100,7 +108,7 @@ impl<'c> ListItem<'c> {
 
         out.kind(self.kind.keyword()).whitespace();
 
-        for (i, seg) in self.module.iter().enumerate() {
+        for (i, (seg, seg_kind)) in self.module.iter().enumerate() {
             let is_last = i == self.module.len() - 1;
             if is_last {
                 match self.kind {
@@ -114,7 +122,18 @@ impl<'c> ListItem<'c> {
                     _ => out.identifier(seg),
                 };
             } else {
-                out.identifier(seg).symbol("::");
+                // Apply correct coloring based on segment kind
+                match seg_kind {
+                    EntryKind::Enum(_)
+                    | EntryKind::Struct(_)
+                    | EntryKind::Trait(_)
+                    | EntryKind::TypeAlias(_) => out.type_(seg),
+                    EntryKind::Function(_) => out.function(seg),
+                    EntryKind::Macro(_) => out.identifier(seg).symbol("!"),
+                    EntryKind::Constant(_) | EntryKind::Static(_) => out.symbol(seg),
+                    _ => out.identifier(seg),
+                };
+                out.symbol("::");
             }
         }
 
