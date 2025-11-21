@@ -130,8 +130,8 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
             .collect::<Vec<String>>()
             .join("\n"))
     } else {
-        // let id = list[0].id;
-        doc::signatures(&krate, parsed_args.color)
+        let id = list[0].id;
+        doc::signature_for_id(&krate, &item_processor, &id, parsed_args.color)
     }
 }
 

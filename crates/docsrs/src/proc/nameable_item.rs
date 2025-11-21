@@ -12,9 +12,6 @@ pub struct NameableItem<'c> {
     /// We can't calculate this on-demand, because we can't know the final name
     /// until we have checked if we need to break import recursion.
     pub overridden_name: Option<String>,
-
-    /// See [`crate::doc::item_processor::sorting_prefix()`] docs for an explanation why we have this.
-    pub sorting_prefix: u8,
 }
 
 impl NameableItem<'_> {

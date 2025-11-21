@@ -108,11 +108,6 @@ impl Output {
         self.tokens
     }
 
-    /// Get a reference to the underlying tokens.
-    pub(crate) fn tokens(&self) -> &[Token] {
-        &self.tokens
-    }
-
     // Convenience methods for common token sequences
 
     /// Add "pub " (qualifier + whitespace).

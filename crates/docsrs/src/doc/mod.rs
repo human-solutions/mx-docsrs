@@ -1,12 +1,7 @@
 use anyhow::Result;
-use rustdoc_types::Crate;
+use rustdoc_types::{Crate, Id};
 
-use crate::{
-    color::Color,
-    doc::public_item::public_api_in_crate,
-    fmt::{tokens_to_colored_string, tokens_to_string},
-    proc::ItemProcessor,
-};
+use crate::{color::Color, proc::ItemProcessor};
 
 mod doc_formatter;
 pub(crate) mod impl_kind;
@@ -15,47 +10,30 @@ mod render;
 
 use doc_formatter::format_doc;
 use public_item::PublicItem;
+use render::RenderingContext;
 
-pub fn signatures(krate: &Crate, color: Color) -> Result<String> {
-    let item_processor = ItemProcessor::process(krate);
-
-    let mut items = public_api_in_crate(krate, &item_processor);
-
-    items.sort_by(PublicItem::grouping_cmp);
-
-    // If exactly one match, show documentation instead of list
-    if items.len() == 1 {
-        return format_doc(krate, &items[0], color);
-    }
-
-    let use_colors = color.is_active();
-
-    // Override the colored crate's auto-detection to respect our color setting
-    match color {
-        Color::Always => colored::control::set_override(true),
-        Color::Never => colored::control::set_override(false),
-        Color::Auto => {
-            // Let colored crate auto-detect
-            colored::control::unset_override();
-        }
-    }
-
-    let mut output = items
+pub fn signature_for_id(
+    krate: &Crate,
+    item_processor: &ItemProcessor,
+    id: &Id,
+    color: Color,
+) -> Result<String> {
+    // Find the intermediate item with the matching id
+    let intermediate_item = item_processor
+        .output
         .iter()
-        .map(|item| {
-            if use_colors {
-                tokens_to_colored_string(&item.tokens)
-            } else {
-                tokens_to_string(&item.tokens)
-            }
-        })
-        .collect::<Vec<_>>()
-        .join("\n");
+        .find(|item| item.id() == *id)
+        .ok_or_else(|| anyhow::anyhow!("Item with id {:?} not found", id))?;
 
-    if !output.is_empty() {
-        output.push('\n');
-    }
+    // Create rendering context
+    let context = RenderingContext {
+        crate_: krate,
+        id_to_items: item_processor.id_to_items(),
+    };
 
-    // Ok(output)
-    Ok(String::new())
+    // Convert to PublicItem
+    let public_item = PublicItem::from_intermediate_public_item(&context, intermediate_item);
+
+    // Format the documentation
+    format_doc(krate, &public_item, color)
 }

@@ -3,7 +3,6 @@ use rustdoc_types::{Id, Item, Type};
 use super::intermediate_public_item::IntermediatePublicItem;
 use super::nameable_item::NameableItem;
 use super::path_component::PathComponent;
-use crate::ext::item_ext::ItemExt;
 
 /// Items in rustdoc JSON reference each other by Id. The [`ItemProcessor`]
 /// essentially takes one Id at a time and figure out what to do with it. Once
@@ -38,7 +37,6 @@ impl<'c> UnprocessedItem<'c> {
             item: NameableItem {
                 item,
                 overridden_name,
-                sorting_prefix: item.sorting_prefix(),
             },
             type_,
             hide: false,
