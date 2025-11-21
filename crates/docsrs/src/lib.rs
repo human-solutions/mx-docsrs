@@ -14,7 +14,10 @@ use cli::Cli;
 use docfetch::{clear_cache, fetch_docs, load_local_docs};
 use version_resolver::VersionResolver;
 
-use crate::{list::list_items, proc::ItemProcessor};
+use crate::{
+    list::{ListItem, list_items},
+    proc::ItemProcessor,
+};
 
 /// Run the CLI with the given arguments and return the output as a string.
 ///
@@ -108,9 +111,13 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
     let item_processor = ItemProcessor::process(&krate);
     let mut list = list_items(&item_processor);
 
+    if let Some(symbol) = symbol.as_deref() {
+        filter_list(&mut list, symbol);
+    }
+
     list.sort_by(|item1, item2| item1.path.cmp(&item2.path));
 
-    if true {
+    if list.len() != 1 {
         Ok(list
             .iter()
             .map(|entry| {
@@ -123,6 +130,32 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
             .collect::<Vec<String>>()
             .join("\n"))
     } else {
-        doc::signatures(&krate, parsed_args.color, symbol.as_deref())
+        // let id = list[0].id;
+        doc::signatures(&krate, parsed_args.color)
+    }
+}
+
+fn filter_list<'c>(list: &mut Vec<ListItem<'c>>, symbol: &str) {
+    // First try exact suffix match
+    let matching_end: Vec<_> = list
+        .iter()
+        .filter(|item| item.path.ends_with(symbol))
+        .cloned()
+        .collect();
+
+    if matching_end.len() == 1 {
+        *list = matching_end;
+        return;
+    }
+
+    // Then try substring match
+    let matching_sub: Vec<_> = list
+        .iter()
+        .filter(|item| item.path.contains(symbol))
+        .cloned()
+        .collect();
+
+    if !matching_sub.is_empty() {
+        *list = matching_sub;
     }
 }

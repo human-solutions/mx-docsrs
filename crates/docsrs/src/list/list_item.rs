@@ -67,7 +67,7 @@ pub struct ListItem<'c> {
     module: Vec<String>,
     pub path: String,
     kind: EntryKind<'c>,
-    _id: Id,
+    pub id: Id,
 }
 
 impl<'c> ListItem<'c> {
@@ -85,7 +85,7 @@ impl<'c> ListItem<'c> {
             module,
             path,
             kind,
-            _id: intermediate.id(),
+            id: intermediate.id(),
         })
     }
 

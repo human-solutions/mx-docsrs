@@ -10,25 +10,18 @@ use crate::{
 
 mod doc_formatter;
 pub(crate) mod impl_kind;
-mod matcher;
 mod public_item;
 mod render;
 
 use doc_formatter::format_doc;
-use matcher::match_items;
 use public_item::PublicItem;
 
-pub fn signatures(krate: &Crate, color: Color, pattern: Option<&str>) -> Result<String> {
+pub fn signatures(krate: &Crate, color: Color) -> Result<String> {
     let item_processor = ItemProcessor::process(krate);
 
     let mut items = public_api_in_crate(krate, &item_processor);
 
     items.sort_by(PublicItem::grouping_cmp);
-
-    // Apply pattern matching if provided
-    if let Some(pattern) = pattern {
-        items = match_items(items, pattern);
-    }
 
     // If exactly one match, show documentation instead of list
     if items.len() == 1 {
