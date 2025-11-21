@@ -5,6 +5,7 @@ mod doc;
 mod docfetch;
 mod ext;
 mod fmt;
+mod list;
 mod proc;
 mod version_resolver;
 
@@ -12,6 +13,8 @@ use clap::Parser;
 use cli::Cli;
 use docfetch::{clear_cache, fetch_docs, load_local_docs};
 use version_resolver::VersionResolver;
+
+use crate::{list::list_items, proc::ItemProcessor};
 
 /// Run the CLI with the given arguments and return the output as a string.
 ///
@@ -102,5 +105,24 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
         fetch_docs(&crate_spec.name, &version, use_cache)?
     };
 
-    doc::extract_list(&krate, parsed_args.color, symbol.as_deref())
+    let item_processor = ItemProcessor::process(&krate);
+    let mut list = list_items(&item_processor);
+
+    list.sort_by(|item1, item2| item1.path.cmp(&item2.path));
+
+    if true {
+        Ok(list
+            .iter()
+            .map(|entry| {
+                if parsed_args.color.is_active() {
+                    entry.as_output().to_colored_string()
+                } else {
+                    entry.as_output().to_string()
+                }
+            })
+            .collect::<Vec<String>>()
+            .join("\n"))
+    } else {
+        doc::signatures(&krate, parsed_args.color, symbol.as_deref())
+    }
 }

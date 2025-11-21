@@ -18,7 +18,7 @@ use doc_formatter::format_doc;
 use matcher::match_items;
 use public_item::PublicItem;
 
-pub fn extract_list(krate: &Crate, color: Color, pattern: Option<&str>) -> Result<String> {
+pub fn signatures(krate: &Crate, color: Color, pattern: Option<&str>) -> Result<String> {
     let item_processor = ItemProcessor::process(krate);
 
     let mut items = public_api_in_crate(krate, &item_processor);
@@ -63,5 +63,6 @@ pub fn extract_list(krate: &Crate, color: Color, pattern: Option<&str>) -> Resul
         output.push('\n');
     }
 
-    Ok(output)
+    // Ok(output)
+    Ok(String::new())
 }
