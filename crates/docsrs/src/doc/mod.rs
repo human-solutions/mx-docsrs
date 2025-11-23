@@ -35,5 +35,5 @@ pub fn signature_for_id(
     let public_item = PublicItem::from_intermediate_public_item(&context, intermediate_item);
 
     // Format the documentation
-    format_doc(krate, &public_item, color)
+    format_doc(krate, &public_item, color, &context)
 }

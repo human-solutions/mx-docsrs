@@ -437,7 +437,7 @@ impl<'c> RenderingContext<'c> {
         output
     }
 
-    fn render_function(
+    pub fn render_function(
         &self,
         name: Output,
         sig: &FunctionSignature,
@@ -634,7 +634,7 @@ impl<'c> RenderingContext<'c> {
         output
     }
 
-    pub(crate) fn render_impl(
+    pub fn render_impl(
         &self,
         impl_: &Impl,
         _path: &[PathComponent],
