@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rustdoc_types::{Crate, ItemEnum};
+use rustdoc_types::{Crate, ItemEnum, StructKind, Visibility};
 
 use super::impl_kind::ImplKind;
 use super::public_item::PublicItem;
@@ -46,7 +46,7 @@ pub fn format_doc(
     Ok(output)
 }
 
-/// Format child items for a struct (methods and trait implementations)
+/// Format child items for a struct (fields, methods and trait implementations)
 fn format_struct_children(
     krate: &Crate,
     struct_: &rustdoc_types::Struct,
@@ -54,8 +54,67 @@ fn format_struct_children(
     use_colors: bool,
     context: &RenderingContext,
 ) -> Result<()> {
+    let mut plain_fields = Vec::new();
+    let mut tuple_fields = Vec::new();
     let mut methods = Vec::new();
     let mut trait_impls = Vec::new();
+
+    // Process struct fields based on kind
+    match &struct_.kind {
+        StructKind::Plain { fields, .. } => {
+            // Process named fields
+            for field_id in fields {
+                if let Some(field_item) = krate.index.get(field_id)
+                    && matches!(field_item.visibility, Visibility::Public)
+                    && let ItemEnum::StructField(field_type) = &field_item.inner
+                {
+                    let field_name = field_item.name.as_deref().unwrap_or("unknown");
+                    let mut field_output = crate::fmt::Output::new();
+                    field_output.qualifier("pub");
+                    field_output.whitespace();
+                    field_output.function(field_name);
+                    field_output.symbol(":");
+                    field_output.whitespace();
+                    field_output.extend(context.render_type(field_type));
+
+                    let field_str = if use_colors {
+                        tokens_to_colored_string(&field_output.into_tokens())
+                    } else {
+                        tokens_to_string(&field_output.into_tokens())
+                    };
+                    plain_fields.push(field_str);
+                }
+            }
+        }
+        StructKind::Tuple(fields) => {
+            // Process tuple fields
+            for (index, field_id_opt) in fields.iter().enumerate() {
+                if let Some(field_id) = field_id_opt
+                    && let Some(field_item) = krate.index.get(field_id)
+                    && matches!(field_item.visibility, Visibility::Public)
+                    && let ItemEnum::StructField(field_type) = &field_item.inner
+                {
+                    let mut field_output = crate::fmt::Output::new();
+                    field_output.symbol(index.to_string());
+                    field_output.symbol(":");
+                    field_output.whitespace();
+                    field_output.qualifier("pub");
+                    field_output.whitespace();
+                    field_output.extend(context.render_type(field_type));
+
+                    let field_str = if use_colors {
+                        tokens_to_colored_string(&field_output.into_tokens())
+                    } else {
+                        tokens_to_string(&field_output.into_tokens())
+                    };
+                    tuple_fields.push(field_str);
+                }
+            }
+        }
+        StructKind::Unit => {
+            // Unit structs have no fields
+        }
+    }
 
     // Process each impl block
     for impl_id in &struct_.impls {
@@ -101,6 +160,28 @@ fn format_struct_children(
                     }
                 }
             }
+        }
+    }
+
+    // Output Fields section (for plain structs)
+    if !plain_fields.is_empty() {
+        output.push('\n');
+        output.push_str("Fields:\n");
+        for field in plain_fields {
+            output.push_str("  ");
+            output.push_str(&field);
+            output.push('\n');
+        }
+    }
+
+    // Output Tuple Fields section (for tuple structs)
+    if !tuple_fields.is_empty() {
+        output.push('\n');
+        output.push_str("Tuple Fields:\n");
+        for field in tuple_fields {
+            output.push_str("  ");
+            output.push_str(&field);
+            output.push('\n');
         }
     }
 

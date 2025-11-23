@@ -336,7 +336,7 @@ impl<'c> RenderingContext<'c> {
         output
     }
 
-    fn render_type(&self, ty: &Type) -> Output {
+    pub fn render_type(&self, ty: &Type) -> Output {
         self.render_option_type(&Some(ty))
     }
 
