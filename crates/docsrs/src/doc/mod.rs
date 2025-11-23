@@ -3,6 +3,7 @@ use rustdoc_types::{Crate, Id};
 
 use crate::{color::Color, proc::ItemProcessor};
 
+mod children;
 mod doc_formatter;
 pub(crate) mod impl_kind;
 mod public_item;
