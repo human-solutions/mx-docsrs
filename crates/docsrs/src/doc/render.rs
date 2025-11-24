@@ -244,13 +244,14 @@ impl<'c> RenderingContext<'c> {
 
     fn render_path(&self, path: &[PathComponent]) -> Output {
         let mut output = Output::new();
+        let mut is_first_visible = true;
         for component in path {
             if component.hide {
                 continue;
             }
 
             let (tokens, push_a_separator) = component.type_.map_or_else(
-                || self.render_nameable_item(&component.item),
+                || self.render_nameable_item(&component.item, is_first_visible),
                 |ty| self.render_type_and_separator(ty),
             );
 
@@ -259,6 +260,7 @@ impl<'c> RenderingContext<'c> {
             if push_a_separator {
                 output.symbol("::");
             }
+            is_first_visible = false;
         }
         if !path.is_empty() {
             output.pop(); // Remove last "::" so "a::b::c::" becomes "a::b::c"
@@ -266,14 +268,15 @@ impl<'c> RenderingContext<'c> {
         output
     }
 
-    fn render_nameable_item(&self, item: &NameableItem) -> (Output, bool) {
+    fn render_nameable_item(&self, item: &NameableItem, is_first_visible: bool) -> (Output, bool) {
         let mut push_a_separator = false;
         let mut output = Output::new();
 
         if let Some(name) = item.name() {
             // Only push a name if it exists (impls don't have names)
+            let display_name = if is_first_visible { "crate" } else { name };
             if matches!(item.item.inner, ItemEnum::Function(_)) {
-                output.function(name.to_string());
+                output.function(display_name.to_string());
             } else if matches!(
                 item.item.inner,
                 ItemEnum::Trait(_)
@@ -282,9 +285,9 @@ impl<'c> RenderingContext<'c> {
                     | ItemEnum::Enum(_)
                     | ItemEnum::TypeAlias(_)
             ) {
-                output.type_(name.to_string());
+                output.type_(display_name.to_string());
             } else {
-                output.identifier(name.to_string());
+                output.identifier(display_name.to_string());
             }
             push_a_separator = true;
         }
