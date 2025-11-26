@@ -184,7 +184,7 @@ impl<'c> ItemProcessor<'c> {
     ) {
         let finished_item = unprocessed_item.finish(item, overridden_name, type_);
 
-        let children = item.children().into_iter().flatten();
+        let children = item.children();
         let impls = item.impls().into_iter().flatten();
 
         for &id in children {
