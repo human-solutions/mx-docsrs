@@ -98,13 +98,18 @@ impl VersionResolver {
         }
 
         // Crate names are already normalized (hyphens → underscores) at input
-        let doc_path = self
+        let doc_path: PathBuf = self
             .metadata
             .target_directory
             .join("doc")
-            .join(format!("{}.json", crate_name));
+            .join(format!("{}.json", crate_name))
+            .into();
 
-        Some(doc_path.into())
+        if doc_path.exists() {
+            Some(doc_path)
+        } else {
+            None
+        }
     }
 }
 
