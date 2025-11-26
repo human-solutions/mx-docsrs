@@ -3,6 +3,11 @@ use cargo_metadata::{Metadata, MetadataCommand};
 use std::env;
 use std::path::PathBuf;
 
+/// Normalize crate name by replacing hyphens with underscores (Cargo convention)
+fn normalize_crate_name(name: &str) -> String {
+    name.replace('-', "_")
+}
+
 pub struct VersionResolver {
     metadata: Metadata,
 }
@@ -56,15 +61,17 @@ impl VersionResolver {
         // Find workspace member packages that depend on this crate
         for package in &self.metadata.packages {
             if self.metadata.workspace_members.contains(&package.id) {
-                // Check if any dependencies match the crate name
+                // Check if any dependencies match the crate name (normalize for comparison)
                 if package
                     .dependencies
                     .iter()
-                    .any(|dep| dep.name == crate_name)
+                    .any(|dep| normalize_crate_name(&dep.name) == crate_name)
                 {
                     // Now find the actual resolved version in the packages list
                     for pkg in &self.metadata.packages {
-                        if pkg.name == crate_name && resolved_ids.contains(&pkg.id) {
+                        if normalize_crate_name(&pkg.name) == crate_name
+                            && resolved_ids.contains(&pkg.id)
+                        {
                             return Some(pkg.version.to_string());
                         }
                     }
@@ -81,7 +88,7 @@ impl VersionResolver {
             self.metadata
                 .packages
                 .iter()
-                .any(|pkg| pkg.id == *member_id && pkg.name == crate_name)
+                .any(|pkg| pkg.id == *member_id && normalize_crate_name(&pkg.name) == crate_name)
         })
     }
 
@@ -93,13 +100,12 @@ impl VersionResolver {
             return None;
         }
 
-        // Convert crate-name to crate_name (replace hyphens with underscores for file name)
-        let file_name = crate_name.replace('-', "_");
+        // Crate names are already normalized (hyphens → underscores) at input
         let doc_path = self
             .metadata
             .target_directory
             .join("doc")
-            .join(format!("{}.json", file_name));
+            .join(format!("{}.json", crate_name));
 
         Some(doc_path.into())
     }

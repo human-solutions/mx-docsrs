@@ -1,6 +1,11 @@
 use anyhow::{Result, bail};
 use std::str::FromStr;
 
+/// Normalize crate name by replacing hyphens with underscores (Cargo convention)
+fn normalize_crate_name(name: &str) -> String {
+    name.replace('-', "_")
+}
+
 /// Represents a crate specification with optional version and path prefix
 ///
 /// Syntax: `crate[@version][::path::segments]`
@@ -70,7 +75,7 @@ impl CrateSpec {
         });
 
         Ok(CrateSpec {
-            name: name.to_string(),
+            name: normalize_crate_name(name),
             version: version.map(|v| v.to_string()),
             path_prefix,
         })
@@ -207,5 +212,17 @@ mod tests {
         let spec = CrateSpec::parse("tokio::").unwrap();
         assert_eq!(spec.name, "tokio");
         assert_eq!(spec.path_prefix, None);
+    }
+
+    #[test]
+    fn test_normalize_hyphen_to_underscore() {
+        let spec = CrateSpec::parse("serde-json").unwrap();
+        assert_eq!(spec.name, "serde_json");
+    }
+
+    #[test]
+    fn test_normalize_underscore_unchanged() {
+        let spec = CrateSpec::parse("serde_json").unwrap();
+        assert_eq!(spec.name, "serde_json");
     }
 }
