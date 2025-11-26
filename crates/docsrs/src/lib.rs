@@ -64,8 +64,9 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
         .crate_spec
         .ok_or_else(|| anyhow::anyhow!("Missing required argument: CRATE_SPEC"))?;
 
-    // Symbol is optional - if not provided, we'll list all symbols
-    let symbol = parsed_args.symbol;
+    // Filter is optional - if not provided, we'll list all items
+    let filter = parsed_args.filter;
+    let path_prefix = crate_spec.path_prefix.clone();
 
     // Check if this is a local workspace crate
     let local_doc_path = if let Ok(resolver) = VersionResolver::new() {
@@ -111,8 +112,14 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
     let item_processor = ItemProcessor::process(&krate);
     let mut list = list_items(&item_processor);
 
-    if let Some(symbol) = symbol.as_deref() {
-        filter_list(&mut list, symbol);
+    // First filter by path prefix (if provided)
+    if let Some(prefix) = path_prefix.as_deref() {
+        filter_by_path_prefix(&mut list, prefix);
+    }
+
+    // Then filter by text filter (if provided)
+    if let Some(filter) = filter.as_deref() {
+        filter_list(&mut list, filter);
     }
 
     list.sort_by(|item1, item2| item1.path.cmp(&item2.path));
@@ -135,11 +142,21 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
     }
 }
 
-fn filter_list<'c>(list: &mut Vec<ListItem<'c>>, symbol: &str) {
+/// Filter items by path prefix.
+/// Keeps items where path starts with `crate::{prefix}` (matching all descendants).
+fn filter_by_path_prefix<'c>(list: &mut Vec<ListItem<'c>>, prefix: &str) {
+    let full_prefix = format!("crate::{prefix}");
+    list.retain(|item| {
+        // Match exact prefix or prefix followed by ::
+        item.path == full_prefix || item.path.starts_with(&format!("{full_prefix}::"))
+    });
+}
+
+fn filter_list<'c>(list: &mut Vec<ListItem<'c>>, filter: &str) {
     // First try exact suffix match
     let matching_end: Vec<_> = list
         .iter()
-        .filter(|item| item.path.ends_with(symbol))
+        .filter(|item| item.path.ends_with(filter))
         .cloned()
         .collect();
 
@@ -151,7 +168,7 @@ fn filter_list<'c>(list: &mut Vec<ListItem<'c>>, symbol: &str) {
     // Then try substring match
     let matching_sub: Vec<_> = list
         .iter()
-        .filter(|item| item.path.contains(symbol))
+        .filter(|item| item.path.contains(filter))
         .cloned()
         .collect();
 

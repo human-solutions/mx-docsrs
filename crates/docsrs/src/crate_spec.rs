@@ -1,41 +1,79 @@
 use anyhow::{Result, bail};
 use std::str::FromStr;
 
-/// Represents a crate specification with optional version
+/// Represents a crate specification with optional version and path prefix
+///
+/// Syntax: `crate[@version][::path::segments]`
+///
+/// Examples:
+/// - `tokio` → name="tokio", version=None, path_prefix=None
+/// - `tokio@1.0` → name="tokio", version=Some("1.0"), path_prefix=None
+/// - `tokio::task` → name="tokio", version=None, path_prefix=Some("task")
+/// - `tokio@1.0::task::spawn` → name="tokio", version=Some("1.0"), path_prefix=Some("task::spawn")
 #[derive(Debug, Clone)]
 pub struct CrateSpec {
     pub name: String,
     pub version: Option<String>,
+    pub path_prefix: Option<String>,
 }
 
 impl CrateSpec {
     pub fn parse(input: &str) -> Result<Self> {
-        let parts: Vec<&str> = input.splitn(2, '@').collect();
+        // First, split on '@' to separate name from version+path
+        let (name, remainder) = if let Some(at_pos) = input.find('@') {
+            let name = &input[..at_pos];
+            let remainder = &input[at_pos + 1..];
+            (name, Some(remainder))
+        } else {
+            // No '@', check for '::' to separate name from path
+            if let Some(colons_pos) = input.find("::") {
+                let name = &input[..colons_pos];
+                let path = &input[colons_pos + 2..];
+                return Self::build(name, None, Some(path));
+            }
+            (input, None)
+        };
 
-        match parts.as_slice() {
-            [name] => {
-                if name.trim().is_empty() {
-                    bail!("Crate name cannot be empty");
-                }
-                Ok(CrateSpec {
-                    name: name.to_string(),
-                    version: None,
-                })
+        // Parse remainder (version and optional path)
+        let (version, path_prefix) = if let Some(rem) = remainder {
+            if let Some(colons_pos) = rem.find("::") {
+                let version = &rem[..colons_pos];
+                let path = &rem[colons_pos + 2..];
+                (Some(version), Some(path))
+            } else {
+                (Some(rem), None)
             }
-            [name, version] => {
-                if name.trim().is_empty() {
-                    bail!("Crate name cannot be empty");
-                }
-                if version.trim().is_empty() {
-                    bail!("Version cannot be empty after '@'");
-                }
-                Ok(CrateSpec {
-                    name: name.to_string(),
-                    version: Some(version.to_string()),
-                })
-            }
-            _ => unreachable!("splitn(2) always returns 1 or 2 elements"),
+        } else {
+            (None, None)
+        };
+
+        Self::build(name, version, path_prefix)
+    }
+
+    fn build(name: &str, version: Option<&str>, path_prefix: Option<&str>) -> Result<Self> {
+        if name.trim().is_empty() {
+            bail!("Crate name cannot be empty");
         }
+        if let Some(v) = version
+            && v.trim().is_empty()
+        {
+            bail!("Version cannot be empty after '@'");
+        }
+
+        // Normalize path_prefix: trim trailing '::', treat empty as None
+        let path_prefix = path_prefix.map(|p| p.trim_end_matches("::")).and_then(|p| {
+            if p.is_empty() {
+                None
+            } else {
+                Some(p.to_string())
+            }
+        });
+
+        Ok(CrateSpec {
+            name: name.to_string(),
+            version: version.map(|v| v.to_string()),
+            path_prefix,
+        })
     }
 }
 
@@ -56,6 +94,7 @@ mod tests {
         let spec = CrateSpec::parse("tokio").unwrap();
         assert_eq!(spec.name, "tokio");
         assert_eq!(spec.version, None);
+        assert_eq!(spec.path_prefix, None);
     }
 
     #[test]
@@ -63,6 +102,7 @@ mod tests {
         let spec = CrateSpec::parse("tokio@1.0.0").unwrap();
         assert_eq!(spec.name, "tokio");
         assert_eq!(spec.version, Some("1.0.0".to_string()));
+        assert_eq!(spec.path_prefix, None);
     }
 
     #[test]
@@ -70,6 +110,7 @@ mod tests {
         let spec = CrateSpec::parse("serde@^1.0").unwrap();
         assert_eq!(spec.name, "serde");
         assert_eq!(spec.version, Some("^1.0".to_string()));
+        assert_eq!(spec.path_prefix, None);
     }
 
     #[test]
@@ -77,6 +118,46 @@ mod tests {
         let spec = CrateSpec::parse("clap@>=4.0,<5.0").unwrap();
         assert_eq!(spec.name, "clap");
         assert_eq!(spec.version, Some(">=4.0,<5.0".to_string()));
+        assert_eq!(spec.path_prefix, None);
+    }
+
+    #[test]
+    fn test_parse_crate_with_path() {
+        let spec = CrateSpec::parse("tokio::task").unwrap();
+        assert_eq!(spec.name, "tokio");
+        assert_eq!(spec.version, None);
+        assert_eq!(spec.path_prefix, Some("task".to_string()));
+    }
+
+    #[test]
+    fn test_parse_crate_with_deep_path() {
+        let spec = CrateSpec::parse("tokio::task::spawn").unwrap();
+        assert_eq!(spec.name, "tokio");
+        assert_eq!(spec.version, None);
+        assert_eq!(spec.path_prefix, Some("task::spawn".to_string()));
+    }
+
+    #[test]
+    fn test_parse_crate_with_version_and_path() {
+        let spec = CrateSpec::parse("tokio@1.0::task").unwrap();
+        assert_eq!(spec.name, "tokio");
+        assert_eq!(spec.version, Some("1.0".to_string()));
+        assert_eq!(spec.path_prefix, Some("task".to_string()));
+    }
+
+    #[test]
+    fn test_parse_crate_with_version_and_deep_path() {
+        let spec = CrateSpec::parse("tokio@1.0::task::spawn").unwrap();
+        assert_eq!(spec.name, "tokio");
+        assert_eq!(spec.version, Some("1.0".to_string()));
+        assert_eq!(spec.path_prefix, Some("task::spawn".to_string()));
+    }
+
+    #[test]
+    fn test_parse_path_with_trailing_colons() {
+        let spec = CrateSpec::parse("tokio::task::").unwrap();
+        assert_eq!(spec.name, "tokio");
+        assert_eq!(spec.path_prefix, Some("task".to_string()));
     }
 
     #[test]
@@ -119,5 +200,12 @@ mod tests {
         let spec = CrateSpec::parse("crate@1.0@beta").unwrap();
         assert_eq!(spec.name, "crate");
         assert_eq!(spec.version, Some("1.0@beta".to_string()));
+    }
+
+    #[test]
+    fn test_empty_path_becomes_none() {
+        let spec = CrateSpec::parse("tokio::").unwrap();
+        assert_eq!(spec.name, "tokio");
+        assert_eq!(spec.path_prefix, None);
     }
 }
