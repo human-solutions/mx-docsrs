@@ -82,8 +82,7 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
 
     // Load documentation
     let krate = if let Some(doc_path) = local_doc_path {
-        // Print immediately since we might panic before returning
-        println!("Local crate found at: {}", doc_path.display());
+        output.push_str(&format!("Local crate found at: {}\n", doc_path.display()));
         load_local_docs(&doc_path)?
     } else {
         // Resolve the version
