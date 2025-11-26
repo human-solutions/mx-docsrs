@@ -1,0 +1,31 @@
+---
+source: crates/docsrs/tests/cli.rs
+expression: stdout
+---
+Search for documentation of a symbol in a crate or list all symbols
+
+Usage: docsrs [OPTIONS] [CRATE_SPEC] [FILTER]
+
+Arguments:
+  [CRATE_SPEC]
+          Crate path: crate[@version][::path] (e.g., "tokio", "serde@1.0", "tokio::task::spawn")
+
+  [FILTER]
+          Filter to search within the path (optional - if omitted, lists all items in path)
+
+Options:
+      --no-cache
+          Skip cache and download fresh rustdoc JSON
+
+      --clear-cache
+          Clear the entire cache directory
+
+      --color <WHEN>
+          When to use colors in output.
+          
+          By default, `--color=auto` is active. Using just `--color` without an arg is equivalent to `--color=always`.
+          
+          [default: auto]
+
+  -h, --help
+          Print help (see a summary with '-h')
