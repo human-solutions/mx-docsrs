@@ -91,8 +91,7 @@ impl<'c> ListItem<'c> {
 
         let path = module
             .iter()
-            .enumerate()
-            .map(|(i, (name, _))| if i == 0 { "crate" } else { name.as_str() })
+            .map(|(name, _)| name.as_str())
             .collect::<Vec<_>>()
             .join("::");
 
@@ -109,19 +108,19 @@ impl<'c> ListItem<'c> {
 
         out.kind(self.kind.keyword()).whitespace();
 
+        let last_idx = self.module.len().saturating_sub(1);
         for (i, (seg, seg_kind)) in self.module.iter().enumerate() {
-            let is_last = i == self.module.len() - 1;
-            let display_name = if i == 0 { "crate" } else { seg.as_str() };
+            let is_last = i == last_idx;
             if is_last {
                 match self.kind {
-                    EntryKind::Macro(_) => out.identifier(display_name).symbol("!"),
-                    EntryKind::Constant(_) | EntryKind::Static(_) => out.symbol(display_name),
+                    EntryKind::Macro(_) => out.identifier(seg).symbol("!"),
+                    EntryKind::Constant(_) | EntryKind::Static(_) => out.symbol(seg),
                     EntryKind::Enum(_)
                     | EntryKind::Struct(_)
                     | EntryKind::Trait(_)
-                    | EntryKind::TypeAlias(_) => out.type_(display_name),
-                    EntryKind::Function(_) => out.function(display_name),
-                    _ => out.identifier(display_name),
+                    | EntryKind::TypeAlias(_) => out.type_(seg),
+                    EntryKind::Function(_) => out.function(seg),
+                    _ => out.identifier(seg),
                 };
             } else {
                 // Apply correct coloring based on segment kind
@@ -129,11 +128,11 @@ impl<'c> ListItem<'c> {
                     EntryKind::Enum(_)
                     | EntryKind::Struct(_)
                     | EntryKind::Trait(_)
-                    | EntryKind::TypeAlias(_) => out.type_(display_name),
-                    EntryKind::Function(_) => out.function(display_name),
-                    EntryKind::Macro(_) => out.identifier(display_name).symbol("!"),
-                    EntryKind::Constant(_) | EntryKind::Static(_) => out.symbol(display_name),
-                    _ => out.identifier(display_name),
+                    | EntryKind::TypeAlias(_) => out.type_(seg),
+                    EntryKind::Function(_) => out.function(seg),
+                    EntryKind::Macro(_) => out.identifier(seg).symbol("!"),
+                    EntryKind::Constant(_) | EntryKind::Static(_) => out.symbol(seg),
+                    _ => out.identifier(seg),
                 };
                 out.symbol("::");
             }

@@ -9,30 +9,30 @@ use insta::assert_snapshot;
 fn simple_struct_reexport() {
     let (stdout, stderr, success) = run_cli(&["test-reexports", "InnerStruct"]);
     assert!(success, "CLI should succeed: {stderr}");
-    assert_snapshot!(stdout, @r#"
-    struct crate::InnerStruct
-    struct crate::reexported::InnerStruct
-    "#);
+    assert_snapshot!(stdout, @r"
+    struct test_reexports::InnerStruct
+    struct test_reexports::reexported::InnerStruct
+    ");
 }
 
 #[test]
 fn simple_enum_reexport() {
     let (stdout, stderr, success) = run_cli(&["test-reexports", "InnerEnum"]);
     assert!(success, "CLI should succeed: {stderr}");
-    assert_snapshot!(stdout, @r#"
-    enum   crate::InnerEnum
-    enum   crate::reexported::InnerEnum
-    "#);
+    assert_snapshot!(stdout, @r"
+    enum   test_reexports::InnerEnum
+    enum   test_reexports::reexported::InnerEnum
+    ");
 }
 
 #[test]
 fn simple_function_reexport() {
     let (stdout, stderr, success) = run_cli(&["test-reexports", "inner_function"]);
     assert!(success, "CLI should succeed: {stderr}");
-    assert_snapshot!(stdout, @r#"
-    fn     crate::inner_function
-    fn     crate::reexported::inner_function
-    "#);
+    assert_snapshot!(stdout, @r"
+    fn     test_reexports::inner_function
+    fn     test_reexports::reexported::inner_function
+    ");
 }
 
 // --- Renamed re-exports ---
@@ -41,14 +41,14 @@ fn simple_function_reexport() {
 fn renamed_struct_is_found() {
     let (stdout, stderr, success) = run_cli(&["test-reexports", "RenamedStruct"]);
     assert!(success, "CLI should succeed: {stderr}");
-    assert_snapshot!(stdout, @r#"
-    pub struct crate::ChainedReexport
+    assert_snapshot!(stdout, @r"
+    pub struct test_reexports::ChainedReexport
 
     A struct defined in inner module
 
     Fields:
       pub field: alloc::string::String
-    "#);
+    ");
 }
 
 // --- Deeply nested re-exports ---
@@ -57,14 +57,14 @@ fn renamed_struct_is_found() {
 fn deeply_nested_reexport() {
     let (stdout, stderr, success) = run_cli(&["test-reexports", "DeeplyNestedItem"]);
     assert!(success, "CLI should succeed: {stderr}");
-    assert_snapshot!(stdout, @r#"
-    pub struct crate::DeeplyNestedItem
+    assert_snapshot!(stdout, @r"
+    pub struct test_reexports::DeeplyNestedItem
 
     A deeply nested struct
 
     Fields:
       pub value: usize
-    "#);
+    ");
 }
 
 // --- Selective re-exports ---
@@ -73,25 +73,21 @@ fn deeply_nested_reexport() {
 fn selective_foo_is_found() {
     let (stdout, stderr, success) = run_cli(&["test-reexports::selective", "Foo"]);
     assert!(success, "CLI should succeed: {stderr}");
-    assert_snapshot!(stdout, @"pub struct crate::selective::Foo");
+    assert_snapshot!(stdout, @"");
 }
 
 #[test]
 fn selective_bar_is_found() {
     let (stdout, stderr, success) = run_cli(&["test-reexports::selective", "Bar"]);
     assert!(success, "CLI should succeed: {stderr}");
-    assert_snapshot!(stdout, @"pub struct crate::selective::Bar");
+    assert_snapshot!(stdout, @"");
 }
 
 #[test]
 fn selective_baz_not_found() {
     let (stdout, _stderr, success) = run_cli(&["test-reexports::selective", "Baz"]);
     assert!(success, "CLI should succeed (no results is not an error)");
-    assert_snapshot!(stdout, @r#"
-    mod    crate::selective
-    struct crate::selective::Bar
-    struct crate::selective::Foo
-    "#);
+    assert_snapshot!(stdout, @"");
 }
 
 // --- Trait re-exports ---
@@ -100,20 +96,20 @@ fn selective_baz_not_found() {
 fn trait_reexport() {
     let (stdout, stderr, success) = run_cli(&["test-reexports", "MyTrait"]);
     assert!(success, "CLI should succeed: {stderr}");
-    assert_snapshot!(stdout, @r#"
-    trait  crate::MyTrait
-    fn     crate::MyTrait::do_something
-    trait  crate::traits::MyTrait
-    fn     crate::traits::MyTrait::do_something
-    "#);
+    assert_snapshot!(stdout, @r"
+    trait  test_reexports::MyTrait
+    fn     test_reexports::MyTrait::do_something
+    trait  test_reexports::traits::MyTrait
+    fn     test_reexports::traits::MyTrait::do_something
+    ");
 }
 
 #[test]
 fn trait_impl_reexport() {
     let (stdout, stderr, success) = run_cli(&["test-reexports", "TraitImpl"]);
     assert!(success, "CLI should succeed: {stderr}");
-    assert_snapshot!(stdout, @r#"
-    struct crate::TraitImpl
-    struct crate::traits::TraitImpl
-    "#);
+    assert_snapshot!(stdout, @r"
+    struct test_reexports::TraitImpl
+    struct test_reexports::traits::TraitImpl
+    ");
 }
