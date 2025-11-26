@@ -85,12 +85,6 @@ fn download_rustdoc_json(crate_name: &str, version: &str) -> Result<Vec<u8>> {
     println!("URL: {}", url);
 
     let mut response = ureq::get(&url).call()?;
-    let status = response.status();
-    println!("Status: {}", status);
-
-    if status != 200 {
-        anyhow::bail!("Failed to fetch rustdoc JSON (status: {})", status);
-    }
 
     let mut compressed_data = Vec::new();
     response
