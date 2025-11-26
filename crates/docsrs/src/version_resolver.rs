@@ -3,10 +3,7 @@ use cargo_metadata::{Metadata, MetadataCommand};
 use std::env;
 use std::path::PathBuf;
 
-/// Normalize crate name by replacing hyphens with underscores (Cargo convention)
-fn normalize_crate_name(name: &str) -> String {
-    name.replace('-', "_")
-}
+use crate::util::normalize_crate_name;
 
 pub struct VersionResolver {
     metadata: Metadata,

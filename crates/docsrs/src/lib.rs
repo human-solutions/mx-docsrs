@@ -7,6 +7,7 @@ mod ext;
 mod fmt;
 mod list;
 mod proc;
+mod util;
 mod version_resolver;
 
 use clap::Parser;

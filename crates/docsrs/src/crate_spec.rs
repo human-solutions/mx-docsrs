@@ -1,10 +1,7 @@
 use anyhow::{Result, bail};
 use std::str::FromStr;
 
-/// Normalize crate name by replacing hyphens with underscores (Cargo convention)
-fn normalize_crate_name(name: &str) -> String {
-    name.replace('-', "_")
-}
+use crate::util::normalize_crate_name;
 
 /// Represents a crate specification with optional version and path prefix
 ///
