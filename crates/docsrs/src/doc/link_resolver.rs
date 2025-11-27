@@ -2,91 +2,15 @@
 
 use std::{cmp::Ordering, collections::HashMap};
 
-use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd};
 use rustdoc_types::{Crate, Id};
 
 use crate::proc::IntermediatePublicItem;
 
-/// Resolves intra-doc links in a documentation string to fully qualified paths.
+/// Resolves a single link to its fully qualified path.
 ///
-/// Links are resolved using `Item.links` (which rustdoc pre-resolves) and then
-/// looking up the public path via `id_to_items`.
-pub fn resolve_doc_links(
-    docs: &str,
-    item_links: &HashMap<String, Id>,
-    krate: &Crate,
-    id_to_items: &HashMap<&Id, Vec<&IntermediatePublicItem<'_>>>,
-) -> String {
-    let mut options = Options::empty();
-    options.insert(Options::ENABLE_STRIKETHROUGH);
-
-    let parser = Parser::new_ext(docs, options);
-    let mut output = String::new();
-    let mut in_link = false;
-    let mut link_text = String::new();
-    let mut current_dest_url = String::new();
-
-    for event in parser {
-        match event {
-            Event::Start(Tag::Link { dest_url, .. }) => {
-                in_link = true;
-                link_text.clear();
-                current_dest_url = dest_url.to_string();
-            }
-            Event::End(TagEnd::Link) => {
-                let resolved = resolve_single_link(
-                    &link_text,
-                    &current_dest_url,
-                    item_links,
-                    krate,
-                    id_to_items,
-                );
-                output.push_str(&resolved);
-                in_link = false;
-            }
-            Event::Text(text) => {
-                if in_link {
-                    link_text.push_str(&text);
-                } else {
-                    output.push_str(&text);
-                }
-            }
-            Event::Code(code) => {
-                if in_link {
-                    link_text.push_str(&code);
-                } else {
-                    output.push('`');
-                    output.push_str(&code);
-                    output.push('`');
-                }
-            }
-            Event::SoftBreak => output.push('\n'),
-            Event::HardBreak => output.push_str("\n\n"),
-            Event::Start(Tag::Paragraph) => {}
-            Event::End(TagEnd::Paragraph) => output.push_str("\n\n"),
-            Event::Start(Tag::Heading { level, .. }) => {
-                output.push_str(&"#".repeat(level as usize));
-                output.push(' ');
-            }
-            Event::End(TagEnd::Heading(_)) => output.push_str("\n\n"),
-            Event::Start(Tag::CodeBlock(_)) => output.push_str("```\n"),
-            Event::End(TagEnd::CodeBlock) => output.push_str("```\n"),
-            Event::Start(Tag::List(None)) => {}
-            Event::End(TagEnd::List(_)) => output.push('\n'),
-            Event::Start(Tag::Item) => output.push_str("- "),
-            Event::End(TagEnd::Item) => output.push('\n'),
-            Event::Start(Tag::Emphasis) => output.push('*'),
-            Event::End(TagEnd::Emphasis) => output.push('*'),
-            Event::Start(Tag::Strong) => output.push_str("**"),
-            Event::End(TagEnd::Strong) => output.push_str("**"),
-            _ => {}
-        }
-    }
-
-    output.trim_end().to_string()
-}
-
-fn resolve_single_link(
+/// External URLs are formatted as "text (url)".
+/// Intra-doc links are resolved via `Item.links` and `id_to_items`.
+pub(super) fn resolve_single_link(
     link_text: &str,
     dest_url: &str,
     item_links: &HashMap<String, Id>,
@@ -196,18 +120,27 @@ mod tests {
 
     #[test]
     fn test_external_url() {
-        let docs = "[docs](https://docs.rs/tokio)";
-        let result = resolve_doc_links(docs, &HashMap::new(), &empty_crate(), &HashMap::new());
+        let result = resolve_single_link(
+            "docs",
+            "https://docs.rs/tokio",
+            &HashMap::new(),
+            &empty_crate(),
+            &HashMap::new(),
+        );
         assert_eq!(result, "docs (https://docs.rs/tokio)");
     }
 
     #[test]
     fn test_unresolvable_keeps_text() {
-        // When there's no link definition, pulldown-cmark treats it as plain text
-        // so the markdown syntax is preserved
-        let docs = "[`Unknown`]";
-        let result = resolve_doc_links(docs, &HashMap::new(), &empty_crate(), &HashMap::new());
-        assert_eq!(result, "[`Unknown`]");
+        // Unresolvable links return the original link text
+        let result = resolve_single_link(
+            "Unknown",
+            "Unknown",
+            &HashMap::new(),
+            &empty_crate(),
+            &HashMap::new(),
+        );
+        assert_eq!(result, "Unknown");
     }
 
     fn empty_crate() -> Crate {

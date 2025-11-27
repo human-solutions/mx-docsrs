@@ -114,7 +114,7 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
 
     // First filter by path prefix (if provided)
     if let Some(prefix) = path_prefix.as_deref() {
-        filter_by_path_prefix(&mut list, prefix);
+        filter_by_path_prefix(&mut list, &crate_spec.name, prefix);
     }
 
     // Then filter by text filter (if provided)
@@ -150,9 +150,9 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
 }
 
 /// Filter items by path prefix.
-/// Keeps items where path starts with `crate::{prefix}` (matching all descendants).
-fn filter_by_path_prefix<'c>(list: &mut Vec<ListItem<'c>>, prefix: &str) {
-    let full_prefix = format!("crate::{prefix}");
+/// Keeps items where path starts with `{crate_name}::{prefix}` (matching all descendants).
+fn filter_by_path_prefix<'c>(list: &mut Vec<ListItem<'c>>, crate_name: &str, prefix: &str) {
+    let full_prefix = format!("{crate_name}::{prefix}");
     list.retain(|item| {
         // Match exact prefix or prefix followed by ::
         item.path == full_prefix || item.path.starts_with(&format!("{full_prefix}::"))

@@ -78,21 +78,32 @@ fn deeply_nested_reexport() {
 fn selective_foo_is_found() {
     let (stdout, stderr, success) = run_cli(&["test-reexports::selective", "Foo"]);
     assert!(success, "CLI should succeed: {stderr}");
-    assert_snapshot!(stdout, @"Local crate found at: [LOCAL_PATH]");
+    assert_snapshot!(stdout, @r"
+    Local crate found at: [LOCAL_PATH]
+    pub struct test_reexports::selective::Foo
+    ");
 }
 
 #[test]
 fn selective_bar_is_found() {
     let (stdout, stderr, success) = run_cli(&["test-reexports::selective", "Bar"]);
     assert!(success, "CLI should succeed: {stderr}");
-    assert_snapshot!(stdout, @"Local crate found at: [LOCAL_PATH]");
+    assert_snapshot!(stdout, @r"
+    Local crate found at: [LOCAL_PATH]
+    pub struct test_reexports::selective::Bar
+    ");
 }
 
 #[test]
 fn selective_baz_not_found() {
     let (stdout, _stderr, success) = run_cli(&["test-reexports::selective", "Baz"]);
     assert!(success, "CLI should succeed (no results is not an error)");
-    assert_snapshot!(stdout, @"Local crate found at: [LOCAL_PATH]");
+    assert_snapshot!(stdout, @r"
+    Local crate found at: [LOCAL_PATH]
+    mod    test_reexports::selective
+    struct test_reexports::selective::Bar
+    struct test_reexports::selective::Foo
+    ");
 }
 
 // --- Trait re-exports ---

@@ -7,6 +7,7 @@ mod children;
 mod doc_formatter;
 pub(crate) mod impl_kind;
 mod link_resolver;
+mod markdown_formatter;
 mod public_item;
 mod render;
 

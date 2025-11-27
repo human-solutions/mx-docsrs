@@ -4,7 +4,7 @@ use rustdoc_types::{Crate, ItemEnum};
 use super::children::{
     format_enum_children, format_module_children, format_struct_children, format_trait_children,
 };
-use super::link_resolver::resolve_doc_links;
+use super::markdown_formatter::format_markdown;
 use super::public_item::PublicItem;
 use super::render::RenderingContext;
 use crate::{
@@ -36,9 +36,14 @@ pub fn format_doc(
     if let Some(full_item) = krate.index.get(&item._id) {
         if let Some(docs) = &full_item.docs {
             output.push('\n');
-            let resolved_docs =
-                resolve_doc_links(docs, &full_item.links, krate, &context.id_to_items);
-            output.push_str(&resolved_docs);
+            let formatted_docs = format_markdown(
+                docs,
+                &full_item.links,
+                krate,
+                &context.id_to_items,
+                use_colors,
+            );
+            output.push_str(&formatted_docs);
             output.push('\n');
         }
 
