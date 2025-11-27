@@ -253,6 +253,12 @@ impl<'a> MarkdownFormatter<'a> {
                     self.block_quote_text.push('\n');
                 } else if self.in_heading {
                     self.heading_text.push(' ');
+                } else if self.in_emphasis {
+                    self.emphasis_text.push(' ');
+                } else if self.in_strong {
+                    self.strong_text.push(' ');
+                } else if self.in_link {
+                    self.link_text.push(' ');
                 } else {
                     self.output.push('\n');
                 }
