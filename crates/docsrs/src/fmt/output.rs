@@ -145,31 +145,6 @@ impl Output {
         self.whitespace().symbol("->").whitespace();
         self
     }
-
-    /// Convert tokens to a colored string using ANSI color codes.
-    /// The color scheme is inspired by VS Code's dark+ theme.
-    pub(crate) fn to_colored_string(&self) -> String {
-        use colored::Colorize;
-
-        self.tokens
-            .iter()
-            .map(|token| match token {
-                Token::Symbol(text) => text.to_string(),
-                Token::Qualifier(text) => text.blue().to_string(),
-                Token::Kind(text) => text.blue().to_string(),
-                Token::Whitespace => " ".to_string(),
-                Token::Identifier(text) => text.cyan().to_string(),
-                Token::Annotation(text) => text.to_string(),
-                Token::Self_(text) => text.blue().to_string(),
-                Token::Function(text) => text.yellow().to_string(),
-                Token::Lifetime(text) => text.blue().to_string(),
-                Token::Keyword(text) => text.blue().to_string(),
-                Token::Generic(text) => text.green().to_string(),
-                Token::Primitive(text) => text.green().to_string(),
-                Token::Type(text) => text.green().to_string(),
-            })
-            .collect()
-    }
 }
 
 impl Display for Output {

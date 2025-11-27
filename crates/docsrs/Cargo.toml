@@ -22,6 +22,8 @@ serde_json.workspace = true
 directories.workspace = true
 colored.workspace = true
 pulldown-cmark.workspace = true
+syntect.workspace = true
+terminal-colorsaurus.workspace = true
 
 [dev-dependencies]
 insta.workspace = true

@@ -13,17 +13,6 @@ pub enum Color {
     Always,
 }
 
-impl Color {
-    /// Returns true if colors should be active based on the configuration.
-    pub fn is_active(self) -> bool {
-        match self {
-            Self::Auto => std::io::IsTerminal::is_terminal(&std::io::stdout()),
-            Self::Never => false,
-            Self::Always => true,
-        }
-    }
-}
-
 impl std::str::FromStr for Color {
     type Err = String;
 

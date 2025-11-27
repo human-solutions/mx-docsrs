@@ -8,7 +8,6 @@ pub(crate) fn format_module_children(
     krate: &Crate,
     module: &rustdoc_types::Module,
     output: &mut String,
-    _use_colors: bool,
     _context: &RenderingContext,
 ) -> Result<()> {
     let mut modules = Vec::new();

@@ -1,18 +1,18 @@
 use anyhow::Result;
 use rustdoc_types::{Crate, ItemEnum, StructKind, Visibility};
 
+use crate::colorizer::Colorizer;
 use crate::doc::impl_kind::ImplKind;
 use crate::doc::render::RenderingContext;
-use crate::fmt::{tokens_to_colored_string, tokens_to_string};
 
 /// Format child items for a struct (fields, methods and trait implementations)
 pub(crate) fn format_struct_children(
     krate: &Crate,
     struct_: &rustdoc_types::Struct,
     output: &mut String,
-    use_colors: bool,
     context: &RenderingContext,
 ) -> Result<()> {
+    let colorizer = Colorizer::get();
     let mut plain_fields = Vec::new();
     let mut tuple_fields = Vec::new();
     let mut methods = Vec::new();
@@ -36,11 +36,7 @@ pub(crate) fn format_struct_children(
                     field_output.whitespace();
                     field_output.extend(context.render_type(field_type));
 
-                    let field_str = if use_colors {
-                        tokens_to_colored_string(&field_output.into_tokens())
-                    } else {
-                        tokens_to_string(&field_output.into_tokens())
-                    };
+                    let field_str = colorizer.tokens(&field_output.into_tokens());
                     plain_fields.push(field_str);
                 }
             }
@@ -61,11 +57,7 @@ pub(crate) fn format_struct_children(
                     field_output.whitespace();
                     field_output.extend(context.render_type(field_type));
 
-                    let field_str = if use_colors {
-                        tokens_to_colored_string(&field_output.into_tokens())
-                    } else {
-                        tokens_to_string(&field_output.into_tokens())
-                    };
+                    let field_str = colorizer.tokens(&field_output.into_tokens());
                     tuple_fields.push(field_str);
                 }
             }
@@ -89,11 +81,7 @@ pub(crate) fn format_struct_children(
             if impl_.trait_.is_some() {
                 // This is a trait implementation
                 let impl_tokens = context.render_impl(impl_, &[], false);
-                let impl_str = if use_colors {
-                    tokens_to_colored_string(&impl_tokens.into_tokens())
-                } else {
-                    tokens_to_string(&impl_tokens.into_tokens())
-                };
+                let impl_str = colorizer.tokens(&impl_tokens.into_tokens());
                 trait_impls.push(impl_str);
             } else {
                 // This is an inherent impl - extract methods
@@ -109,11 +97,7 @@ pub(crate) fn format_struct_children(
                                 &func.generics,
                                 &func.header,
                             );
-                            let method_str = if use_colors {
-                                tokens_to_colored_string(&method_output.into_tokens())
-                            } else {
-                                tokens_to_string(&method_output.into_tokens())
-                            };
+                            let method_str = colorizer.tokens(&method_output.into_tokens());
                             methods.push(method_str);
                         }
                     }
