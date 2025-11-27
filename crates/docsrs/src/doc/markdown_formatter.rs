@@ -163,7 +163,12 @@ impl<'a> MarkdownFormatter<'a> {
             }
             Event::End(TagEnd::Emphasis) => {
                 let text = std::mem::take(&mut self.emphasis_text);
-                self.push_text(&self.colorizer.emphasis(&text));
+                let styled = self.colorizer.emphasis(&text);
+                if self.in_link {
+                    self.link_text.push_str(&styled);
+                } else {
+                    self.push_text(&styled);
+                }
                 self.in_emphasis = false;
             }
 
@@ -174,7 +179,12 @@ impl<'a> MarkdownFormatter<'a> {
             }
             Event::End(TagEnd::Strong) => {
                 let text = std::mem::take(&mut self.strong_text);
-                self.push_text(&self.colorizer.strong(&text));
+                let styled = self.colorizer.strong(&text);
+                if self.in_link {
+                    self.link_text.push_str(&styled);
+                } else {
+                    self.push_text(&styled);
+                }
                 self.in_strong = false;
             }
 
