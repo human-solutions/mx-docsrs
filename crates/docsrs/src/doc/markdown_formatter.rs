@@ -3,10 +3,11 @@
 use std::collections::HashMap;
 
 use colored::Colorize;
-use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd};
+use pulldown_cmark::{CodeBlockKind, Event, Options, Parser, Tag, TagEnd};
 use rustdoc_types::{Crate, Id};
 
 use super::link_resolver::resolve_single_link;
+use super::syntax_highlighter::highlight_code_block;
 use crate::proc::IntermediatePublicItem;
 
 /// Formats markdown documentation for terminal display.
@@ -51,6 +52,8 @@ struct MarkdownFormatter<'a> {
     link_text: String,
     current_dest_url: String,
     in_code_block: bool,
+    code_block_lang: String,
+    code_block_content: String,
     in_heading: bool,
     heading_text: String,
     in_emphasis: bool,
@@ -81,6 +84,8 @@ impl<'a> MarkdownFormatter<'a> {
             link_text: String::new(),
             current_dest_url: String::new(),
             in_code_block: false,
+            code_block_lang: String::new(),
+            code_block_content: String::new(),
             in_heading: false,
             heading_text: String::new(),
             in_emphasis: false,
@@ -132,12 +137,22 @@ impl<'a> MarkdownFormatter<'a> {
             }
 
             // Code blocks
-            Event::Start(Tag::CodeBlock(_)) => {
+            Event::Start(Tag::CodeBlock(kind)) => {
                 self.in_code_block = true;
+                self.code_block_lang = match kind {
+                    CodeBlockKind::Fenced(lang) => lang.to_string(),
+                    CodeBlockKind::Indented => String::new(),
+                };
+                self.code_block_content.clear();
             }
             Event::End(TagEnd::CodeBlock) => {
+                let highlighted = highlight_code_block(
+                    &self.code_block_content,
+                    &self.code_block_lang,
+                    self.use_colors,
+                );
+                self.output.push_str(&highlighted);
                 self.in_code_block = false;
-                self.output.push('\n');
             }
 
             // Paragraphs
@@ -234,16 +249,8 @@ impl<'a> MarkdownFormatter<'a> {
                 } else if self.in_strong {
                     self.strong_text.push_str(&text);
                 } else if self.in_code_block {
-                    // Indent each line of code block
-                    for line in text.lines() {
-                        self.output.push_str("    ");
-                        if self.use_colors {
-                            self.output.push_str(&line.dimmed().to_string());
-                        } else {
-                            self.output.push_str(line);
-                        }
-                        self.output.push('\n');
-                    }
+                    // Accumulate code block content for later highlighting
+                    self.code_block_content.push_str(&text);
                 } else if self.in_block_quote {
                     self.block_quote_text.push_str(&text);
                 } else {

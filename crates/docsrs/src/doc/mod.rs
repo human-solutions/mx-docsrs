@@ -10,6 +10,7 @@ mod link_resolver;
 mod markdown_formatter;
 mod public_item;
 mod render;
+mod syntax_highlighter;
 
 use doc_formatter::format_doc;
 use public_item::PublicItem;
