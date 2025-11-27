@@ -124,9 +124,8 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
 
     list.sort_by(|item1, item2| item1.path.cmp(&item2.path));
 
-    if list.len() != 1 {
-        Ok(list
-            .iter()
+    let result = if list.len() != 1 {
+        list.iter()
             .map(|entry| {
                 if parsed_args.color.is_active() {
                     entry.as_output().to_colored_string()
@@ -135,10 +134,18 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
                 }
             })
             .collect::<Vec<String>>()
-            .join("\n"))
+            .join("\n")
     } else {
         let id = list[0].id;
-        doc::signature_for_id(&krate, &item_processor, &id, parsed_args.color)
+        doc::signature_for_id(&krate, &item_processor, &id, parsed_args.color)?
+    };
+
+    // Prepend any accumulated output (e.g., local crate banner)
+    if output.is_empty() {
+        Ok(result)
+    } else {
+        output.push_str(&result);
+        Ok(output)
     }
 }
 

@@ -10,6 +10,7 @@ fn public_struct_is_found() {
     let (stdout, stderr, success) = run_cli(&["test-visibility", "PublicStruct"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
+    Local crate found at: [LOCAL_PATH]
     pub struct test_visibility::PublicStruct
 
     A fully public struct
@@ -27,6 +28,7 @@ fn public_enum_is_found() {
     let (stdout, stderr, success) = run_cli(&["test-visibility", "PublicEnum"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
+    Local crate found at: [LOCAL_PATH]
     pub enum test_visibility::PublicEnum
 
     A public enum
@@ -42,6 +44,7 @@ fn public_function_is_found() {
     let (stdout, stderr, success) = run_cli(&["test-visibility", "public_function"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
+    Local crate found at: [LOCAL_PATH]
     pub fn test_visibility::public_function() -> alloc::string::String
 
     A public function
@@ -53,6 +56,7 @@ fn public_const_is_found() {
     let (stdout, stderr, success) = run_cli(&["test-visibility", "PUBLIC_CONST"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
+    Local crate found at: [LOCAL_PATH]
     pub const test_visibility::PUBLIC_CONST: i32
 
     Public constant
@@ -64,6 +68,7 @@ fn public_type_alias_is_found() {
     let (stdout, stderr, success) = run_cli(&["test-visibility", "PublicAlias"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
+    Local crate found at: [LOCAL_PATH]
     pub type test_visibility::PublicAlias = test_visibility::PublicStruct
 
     Public type alias
@@ -75,6 +80,7 @@ fn public_trait_is_found() {
     let (stdout, stderr, success) = run_cli(&["test-visibility", "PublicTrait"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
+    Local crate found at: [LOCAL_PATH]
     pub trait test_visibility::PublicTrait
 
     A trait to test trait visibility
@@ -92,6 +98,7 @@ fn nested_public_is_found() {
     let (stdout, stderr, success) = run_cli(&["test-visibility", "NestedPublic"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
+    Local crate found at: [LOCAL_PATH]
     pub struct test_visibility::public_module::NestedPublic
 
     Public item in public module
@@ -103,6 +110,7 @@ fn deeply_nested_is_found() {
     let (stdout, stderr, success) = run_cli(&["test-visibility", "DeeplyNested"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
+    Local crate found at: [LOCAL_PATH]
     pub struct test_visibility::public_module::inner::DeeplyNested
 
     Public item in nested module
@@ -116,6 +124,7 @@ fn crate_visible_struct_not_found() {
     let (stdout, _stderr, success) = run_cli(&["test-visibility", "CrateVisibleStruct"]);
     assert!(success, "CLI should succeed (no results is not an error)");
     assert_snapshot!(stdout, @r"
+    Local crate found at: [LOCAL_PATH]
     mod    test_visibility
     const  test_visibility::PUBLIC_CONST
     type   test_visibility::PublicAlias
@@ -137,6 +146,7 @@ fn crate_visible_enum_not_found() {
     let (stdout, _stderr, success) = run_cli(&["test-visibility", "CrateVisibleEnum"]);
     assert!(success, "CLI should succeed (no results is not an error)");
     assert_snapshot!(stdout, @r"
+    Local crate found at: [LOCAL_PATH]
     mod    test_visibility
     const  test_visibility::PUBLIC_CONST
     type   test_visibility::PublicAlias
@@ -158,6 +168,7 @@ fn private_struct_not_found() {
     let (stdout, _stderr, success) = run_cli(&["test-visibility", "PrivateStruct"]);
     assert!(success, "CLI should succeed (no results is not an error)");
     assert_snapshot!(stdout, @r"
+    Local crate found at: [LOCAL_PATH]
     mod    test_visibility
     const  test_visibility::PUBLIC_CONST
     type   test_visibility::PublicAlias
@@ -179,6 +190,7 @@ fn super_visible_not_found() {
     let (stdout, _stderr, success) = run_cli(&["test-visibility", "NestedSuperVisible"]);
     assert!(success, "CLI should succeed (no results is not an error)");
     assert_snapshot!(stdout, @r"
+    Local crate found at: [LOCAL_PATH]
     mod    test_visibility
     const  test_visibility::PUBLIC_CONST
     type   test_visibility::PublicAlias
