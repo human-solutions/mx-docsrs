@@ -25,4 +25,9 @@ impl<'c> CrateWrapper<'c> {
             None
         })
     }
+
+    /// Returns the crate root module ID.
+    pub fn root(&self) -> Id {
+        self.crate_.root
+    }
 }

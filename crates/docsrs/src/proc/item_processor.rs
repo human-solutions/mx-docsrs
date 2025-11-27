@@ -226,4 +226,33 @@ impl<'c> ItemProcessor<'c> {
         }
         id_to_items
     }
+
+    /// Returns the crate root module ID.
+    pub fn crate_root_id(&self) -> Id {
+        self.crate_.root()
+    }
+
+    /// Find the item ID for an exact path like "tokio::task".
+    /// Returns None if no item exists at that exact path.
+    pub fn find_item_by_path(&self, path: &str) -> Option<Id> {
+        for item in &self.output {
+            // Skip hidden items
+            if item.path().iter().any(|seg| seg.hide) {
+                continue;
+            }
+
+            // Build the path string
+            let item_path: String = item
+                .path()
+                .iter()
+                .filter_map(|seg| seg.item.name())
+                .collect::<Vec<_>>()
+                .join("::");
+
+            if item_path == path {
+                return Some(item.id());
+            }
+        }
+        None
+    }
 }

@@ -77,70 +77,91 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
     let filter = parsed_args.filter;
     let path_prefix = crate_spec.path_prefix.clone();
 
-    // Check if this is a local workspace crate
-    let local_doc_path = if let Ok(resolver) = VersionResolver::new() {
-        if resolver.is_local_crate(&crate_spec.name) {
-            resolver.get_local_crate_doc_path(&crate_spec.name)
-        } else {
-            None
-        }
+    // Resolve the crate version and load documentation
+    let krate = if let Some(explicit_version) = crate_spec.version.clone() {
+        // User provided explicit version - skip resolution, just fetch
+        let use_cache = !parsed_args.no_cache;
+        fetch_docs(&crate_spec.name, &explicit_version, use_cache)?
     } else {
-        None
-    };
+        // Try to resolve from Cargo.toml
+        match VersionResolver::new() {
+            Ok(resolver) => {
+                if let Some(resolved) = resolver.resolve_crate(&crate_spec.name) {
+                    // Print resolution message
+                    output.push_str(&format!("{}\n", resolved.format_message()));
 
-    // Load documentation
-    let krate = if let Some(doc_path) = local_doc_path {
-        output.push_str(&format!("Local crate found at: {}\n", doc_path.display()));
-        load_local_docs(&doc_path)?
-    } else {
-        // Resolve the version
-        let version = if let Some(explicit_version) = crate_spec.version {
-            // Use explicitly provided version
-            explicit_version
-        } else {
-            // Try to resolve from Cargo.toml
-            match VersionResolver::new() {
-                Ok(resolver) => resolver
-                    .resolve_version(&crate_spec.name)
-                    .unwrap_or_else(|| "latest".to_string()),
-                Err(_) => {
-                    // No Cargo.toml found, default to latest
-                    "latest".to_string()
+                    if resolved.is_local {
+                        // Load local docs if available
+                        if let Some(doc_path) = resolver.get_local_crate_doc_path(&crate_spec.name)
+                        {
+                            load_local_docs(&doc_path)?
+                        } else {
+                            // Local crate but no docs built yet - fetch from docs.rs
+                            let use_cache = !parsed_args.no_cache;
+                            fetch_docs(&crate_spec.name, &resolved.version, use_cache)?
+                        }
+                    } else {
+                        // External dependency - fetch from docs.rs
+                        let use_cache = !parsed_args.no_cache;
+                        fetch_docs(&resolved.name, &resolved.version, use_cache)?
+                    }
+                } else {
+                    // Not found in project, use latest
+                    output.push_str(&format!("Using {}@latest\n", crate_spec.name));
+                    let use_cache = !parsed_args.no_cache;
+                    fetch_docs(&crate_spec.name, "latest", use_cache)?
                 }
             }
-        };
-
-        // Determine whether to use cache
-        let use_cache = !parsed_args.no_cache;
-
-        // Fetch documentation from docs.rs
-        fetch_docs(&crate_spec.name, &version, use_cache)?
+            Err(_) => {
+                // No Cargo.toml found, default to latest
+                output.push_str(&format!("Using {}@latest\n", crate_spec.name));
+                let use_cache = !parsed_args.no_cache;
+                fetch_docs(&crate_spec.name, "latest", use_cache)?
+            }
+        }
     };
 
     let item_processor = ItemProcessor::process(&krate);
-    let mut list = list_items(&item_processor);
 
-    // First filter by path prefix (if provided)
-    if let Some(prefix) = path_prefix.as_deref() {
-        filter_by_path_prefix(&mut list, &crate_spec.name, prefix);
-    }
+    // Determine the output based on path and filter
+    let result = match (path_prefix.as_deref(), filter.as_deref()) {
+        // Pure navigation: show doc for exact path
+        (Some(prefix), None) => {
+            let full_path = format!("{}::{}", crate_spec.name, prefix);
+            let id = item_processor
+                .find_item_by_path(&full_path)
+                .ok_or_else(|| anyhow::anyhow!("No item found at {}", full_path))?;
+            doc::signature_for_id(&krate, &item_processor, &id)?
+        }
+        // Search mode: filter items and show list or single doc
+        (path_prefix, Some(filter)) => {
+            let mut list = list_items(&item_processor);
 
-    // Then filter by text filter (if provided)
-    if let Some(filter) = filter.as_deref() {
-        filter_list(&mut list, filter);
-    }
+            // Filter by path prefix if provided
+            if let Some(prefix) = path_prefix {
+                filter_by_path_prefix(&mut list, &crate_spec.name, prefix);
+            }
 
-    list.sort_by(|item1, item2| item1.path.cmp(&item2.path));
+            // Filter by text filter
+            filter_list(&mut list, filter);
 
-    let result = if list.len() != 1 {
-        let colorizer = colorizer::Colorizer::get();
-        list.iter()
-            .map(|entry| colorizer.tokens(&entry.as_output().into_tokens()))
-            .collect::<Vec<String>>()
-            .join("\n")
-    } else {
-        let id = list[0].id;
-        doc::signature_for_id(&krate, &item_processor, &id)?
+            list.sort_by(|item1, item2| item1.path.cmp(&item2.path));
+
+            if list.len() == 1 {
+                doc::signature_for_id(&krate, &item_processor, &list[0].id)?
+            } else {
+                let colorizer = colorizer::Colorizer::get();
+                list.iter()
+                    .map(|entry| colorizer.tokens(&entry.as_output().into_tokens()))
+                    .collect::<Vec<String>>()
+                    .join("\n")
+            }
+        }
+        // No path, no filter: show crate root doc
+        (None, None) => {
+            let id = item_processor.crate_root_id();
+            doc::signature_for_id(&krate, &item_processor, &id)?
+        }
     };
 
     // Prepend any accumulated output (e.g., local crate banner)
