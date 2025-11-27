@@ -23,3 +23,4 @@ colored = "3.0.0"
 pulldown-cmark = "0.13.0"
 syntect = { version = "5.3", default-features = false, features = ["default-fancy"] }
 insta = { version = "1.43", features = ["redactions"] }
+terminal-colorsaurus = "1.0.1"

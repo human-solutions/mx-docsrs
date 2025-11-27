@@ -6,12 +6,20 @@ use syntect::easy::HighlightLines;
 use syntect::highlighting::ThemeSet;
 use syntect::parsing::SyntaxSet;
 use syntect::util::{LinesWithEndings, as_24_bit_terminal_escaped};
+use terminal_colorsaurus::{QueryOptions, ThemeMode, theme_mode};
 
 /// Global syntax set (loaded once on first use)
 static SYNTAX_SET: LazyLock<SyntaxSet> = LazyLock::new(SyntaxSet::load_defaults_newlines);
 
 /// Global theme set (loaded once on first use)
 static THEME_SET: LazyLock<ThemeSet> = LazyLock::new(ThemeSet::load_defaults);
+
+/// Detected theme name based on terminal background (dark or light)
+static THEME_NAME: LazyLock<&'static str> =
+    LazyLock::new(|| match theme_mode(QueryOptions::default()) {
+        Ok(ThemeMode::Light) => "InspiredGitHub",
+        Ok(ThemeMode::Dark) | Err(_) => "base16-eighties.dark",
+    });
 
 /// Highlight a code block for terminal output.
 ///
@@ -46,8 +54,8 @@ pub fn highlight_code_block(code: &str, language: &str, use_colors: bool) -> Str
         })
         .unwrap_or_else(|| SYNTAX_SET.find_syntax_plain_text());
 
-    // Get theme - base16-eighties.dark uses saturated colors that work on most terminals
-    let theme = &THEME_SET.themes["base16-eighties.dark"];
+    // Get theme based on detected terminal background (dark/light)
+    let theme = &THEME_SET.themes[*THEME_NAME];
 
     let mut highlighter = HighlightLines::new(syntax, theme);
     let mut output = String::new();
