@@ -2,12 +2,11 @@
 
 use std::collections::HashMap;
 
-use colored::Colorize;
 use pulldown_cmark::{CodeBlockKind, Event, Options, Parser, Tag, TagEnd};
 use rustdoc_types::{Crate, Id};
 
 use super::link_resolver::resolve_single_link;
-use super::syntax_highlighter::highlight_code_block;
+use crate::colorizer::Colorizer;
 use crate::proc::IntermediatePublicItem;
 
 /// Formats markdown documentation for terminal display.
@@ -16,8 +15,8 @@ use crate::proc::IntermediatePublicItem;
 /// - Headers become bold
 /// - `**bold**` becomes ANSI bold
 /// - `*italic*` becomes ANSI italic/dim
-/// - `` `code` `` becomes cyan
-/// - Code blocks are indented
+/// - `` `code` `` becomes styled inline code
+/// - Code blocks are syntax highlighted
 /// - Lists use bullet points
 /// - Block quotes use `│` prefix
 pub fn format_markdown(
@@ -25,13 +24,12 @@ pub fn format_markdown(
     item_links: &HashMap<String, Id>,
     krate: &Crate,
     id_to_items: &HashMap<&Id, Vec<&IntermediatePublicItem<'_>>>,
-    use_colors: bool,
 ) -> String {
     let mut options = Options::empty();
     options.insert(Options::ENABLE_STRIKETHROUGH);
 
     let parser = Parser::new_ext(docs, options);
-    let mut formatter = MarkdownFormatter::new(use_colors, item_links, krate, id_to_items);
+    let mut formatter = MarkdownFormatter::new(item_links, krate, id_to_items);
 
     for event in parser {
         formatter.process_event(event);
@@ -42,7 +40,7 @@ pub fn format_markdown(
 
 struct MarkdownFormatter<'a> {
     output: String,
-    use_colors: bool,
+    colorizer: &'static Colorizer,
     item_links: &'a HashMap<String, Id>,
     krate: &'a Crate,
     id_to_items: &'a HashMap<&'a Id, Vec<&'a IntermediatePublicItem<'a>>>,
@@ -69,14 +67,13 @@ struct MarkdownFormatter<'a> {
 
 impl<'a> MarkdownFormatter<'a> {
     fn new(
-        use_colors: bool,
         item_links: &'a HashMap<String, Id>,
         krate: &'a Crate,
         id_to_items: &'a HashMap<&'a Id, Vec<&'a IntermediatePublicItem<'a>>>,
     ) -> Self {
         Self {
             output: String::new(),
-            use_colors,
+            colorizer: Colorizer::get(),
             item_links,
             krate,
             id_to_items,
@@ -127,11 +124,7 @@ impl<'a> MarkdownFormatter<'a> {
             }
             Event::End(TagEnd::Heading(_)) => {
                 let text = std::mem::take(&mut self.heading_text);
-                if self.use_colors {
-                    self.output.push_str(&text.bold().to_string());
-                } else {
-                    self.output.push_str(&text);
-                }
+                self.output.push_str(&self.colorizer.heading(&text));
                 self.output.push_str("\n\n");
                 self.in_heading = false;
             }
@@ -146,11 +139,9 @@ impl<'a> MarkdownFormatter<'a> {
                 self.code_block_content.clear();
             }
             Event::End(TagEnd::CodeBlock) => {
-                let highlighted = highlight_code_block(
-                    &self.code_block_content,
-                    &self.code_block_lang,
-                    self.use_colors,
-                );
+                let highlighted = self
+                    .colorizer
+                    .code_block(&self.code_block_content, &self.code_block_lang);
                 self.output.push_str(&highlighted);
                 self.in_code_block = false;
             }
@@ -172,11 +163,7 @@ impl<'a> MarkdownFormatter<'a> {
             }
             Event::End(TagEnd::Emphasis) => {
                 let text = std::mem::take(&mut self.emphasis_text);
-                if self.use_colors {
-                    self.push_text(&text.italic().to_string());
-                } else {
-                    self.push_text(&text);
-                }
+                self.push_text(&self.colorizer.emphasis(&text));
                 self.in_emphasis = false;
             }
 
@@ -187,11 +174,7 @@ impl<'a> MarkdownFormatter<'a> {
             }
             Event::End(TagEnd::Strong) => {
                 let text = std::mem::take(&mut self.strong_text);
-                if self.use_colors {
-                    self.push_text(&text.bold().to_string());
-                } else {
-                    self.push_text(&text);
-                }
+                self.push_text(&self.colorizer.strong(&text));
                 self.in_strong = false;
             }
 
@@ -225,13 +208,8 @@ impl<'a> MarkdownFormatter<'a> {
             Event::End(TagEnd::BlockQuote(_)) => {
                 let text = std::mem::take(&mut self.block_quote_text);
                 for line in text.trim_end().lines() {
-                    if self.use_colors {
-                        self.output.push_str(&"│ ".dimmed().to_string());
-                        self.output.push_str(&line.dimmed().to_string());
-                    } else {
-                        self.output.push_str("│ ");
-                        self.output.push_str(line);
-                    }
+                    self.output.push_str(&self.colorizer.blockquote_prefix());
+                    self.output.push_str(&self.colorizer.blockquote_line(line));
                     self.output.push('\n');
                 }
                 self.output.push('\n');
@@ -264,10 +242,8 @@ impl<'a> MarkdownFormatter<'a> {
                     self.link_text.push_str(&code);
                 } else if self.in_heading {
                     self.heading_text.push_str(&code);
-                } else if self.use_colors {
-                    self.push_text(&code.cyan().to_string());
                 } else {
-                    self.push_text(&format!("`{}`", code));
+                    self.push_text(&self.colorizer.inline_code(&code));
                 }
             }
 
@@ -315,18 +291,18 @@ impl<'a> MarkdownFormatter<'a> {
 mod tests {
     use super::*;
 
-    fn format_plain(docs: &str) -> String {
-        format_markdown(
-            docs,
-            &HashMap::new(),
-            &empty_crate(),
-            &HashMap::new(),
-            false,
-        )
+    fn format_test(docs: &str) -> String {
+        colored::control::set_override(false);
+        let result = format_markdown(docs, &HashMap::new(), &empty_crate(), &HashMap::new());
+        colored::control::unset_override();
+        result
     }
 
-    fn format_colored(docs: &str) -> String {
-        format_markdown(docs, &HashMap::new(), &empty_crate(), &HashMap::new(), true)
+    fn format_test_colored(docs: &str) -> String {
+        colored::control::set_override(true);
+        let result = format_markdown(docs, &HashMap::new(), &empty_crate(), &HashMap::new());
+        colored::control::unset_override();
+        result
     }
 
     fn empty_crate() -> Crate {
@@ -347,82 +323,79 @@ mod tests {
 
     #[test]
     fn test_plain_text() {
-        let result = format_plain("Hello world");
+        let result = format_test("Hello world");
         assert_eq!(result, "Hello world");
     }
 
     #[test]
     fn test_paragraphs() {
-        let result = format_plain("First paragraph.\n\nSecond paragraph.");
+        let result = format_test("First paragraph.\n\nSecond paragraph.");
         assert_eq!(result, "First paragraph.\n\nSecond paragraph.");
     }
 
     #[test]
     fn test_heading() {
-        let result = format_plain("# Hello");
+        let result = format_test("# Hello");
         assert_eq!(result, "Hello");
     }
 
     #[test]
     fn test_inline_code_plain() {
-        let result = format_plain("Use `foo()` here");
+        let result = format_test("Use `foo()` here");
         assert_eq!(result, "Use `foo()` here");
     }
 
     #[test]
     fn test_inline_code_colored() {
-        // Force colored output for testing
-        colored::control::set_override(true);
-        let result = format_colored("Use `foo()` here");
-        // Should contain ANSI codes for cyan
+        let result = format_test_colored("Use `foo()` here");
+        // Should contain ANSI codes
         assert!(
             result.contains("\x1b["),
             "Expected ANSI codes in: {}",
             result
         );
         assert!(result.contains("foo()"));
-        colored::control::unset_override();
     }
 
     #[test]
     fn test_code_block() {
-        let result = format_plain("```\nlet x = 1;\n```");
+        let result = format_test("```\nlet x = 1;\n```");
         assert_eq!(result, "    let x = 1;");
     }
 
     #[test]
     fn test_unordered_list() {
-        let result = format_plain("- first\n- second");
+        let result = format_test("- first\n- second");
         assert_eq!(result, "  • first\n  • second");
     }
 
     #[test]
     fn test_ordered_list() {
-        let result = format_plain("1. first\n2. second");
+        let result = format_test("1. first\n2. second");
         assert_eq!(result, "  1. first\n  2. second");
     }
 
     #[test]
     fn test_block_quote_plain() {
-        let result = format_plain("> quoted text");
-        assert_eq!(result, "│ quoted text");
+        let result = format_test("> quoted text");
+        assert_eq!(result, "\u{2502} quoted text");
     }
 
     #[test]
     fn test_bold_plain() {
-        let result = format_plain("**bold text**");
+        let result = format_test("**bold text**");
         assert_eq!(result, "bold text");
     }
 
     #[test]
     fn test_italic_plain() {
-        let result = format_plain("*italic text*");
+        let result = format_test("*italic text*");
         assert_eq!(result, "italic text");
     }
 
     #[test]
     fn test_external_link() {
-        let result = format_plain("[docs](https://docs.rs)");
+        let result = format_test("[docs](https://docs.rs)");
         assert_eq!(result, "docs (https://docs.rs)");
     }
 }

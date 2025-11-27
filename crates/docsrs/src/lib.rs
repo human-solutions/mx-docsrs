@@ -1,5 +1,6 @@
 mod cli;
 mod color;
+pub mod colorizer;
 mod crate_spec;
 mod doc;
 mod docfetch;
@@ -52,6 +53,13 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
                 return Err(e.into());
             }
         };
+
+    // Apply global color override based on --color flag
+    match parsed_args.color {
+        color::Color::Never => colored::control::set_override(false),
+        color::Color::Always => colored::control::set_override(true),
+        color::Color::Auto => {} // colored handles auto-detection
+    }
 
     // Handle --clear-cache flag
     if parsed_args.clear_cache {
@@ -125,19 +133,14 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
     list.sort_by(|item1, item2| item1.path.cmp(&item2.path));
 
     let result = if list.len() != 1 {
+        let colorizer = colorizer::Colorizer::get();
         list.iter()
-            .map(|entry| {
-                if parsed_args.color.is_active() {
-                    entry.as_output().to_colored_string()
-                } else {
-                    entry.as_output().to_string()
-                }
-            })
+            .map(|entry| colorizer.tokens(&entry.as_output().into_tokens()))
             .collect::<Vec<String>>()
             .join("\n")
     } else {
         let id = list[0].id;
-        doc::signature_for_id(&krate, &item_processor, &id, parsed_args.color)?
+        doc::signature_for_id(&krate, &item_processor, &id)?
     };
 
     // Prepend any accumulated output (e.g., local crate banner)

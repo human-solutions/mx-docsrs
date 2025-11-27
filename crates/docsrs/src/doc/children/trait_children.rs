@@ -1,17 +1,17 @@
 use anyhow::Result;
 use rustdoc_types::{Crate, ItemEnum};
 
+use crate::colorizer::Colorizer;
 use crate::doc::render::RenderingContext;
-use crate::fmt::{tokens_to_colored_string, tokens_to_string};
 
 /// Format child items for a trait (associated types, methods, etc.)
 pub(crate) fn format_trait_children(
     krate: &Crate,
     trait_: &rustdoc_types::Trait,
     output: &mut String,
-    use_colors: bool,
     context: &RenderingContext,
 ) -> Result<()> {
+    let colorizer = Colorizer::get();
     let mut assoc_types = Vec::new();
     let mut assoc_consts = Vec::new();
     let mut required_methods = Vec::new();
@@ -36,11 +36,7 @@ pub(crate) fn format_trait_children(
                         type_output.extend(context.render_type(default_type));
                     }
 
-                    let type_str = if use_colors {
-                        tokens_to_colored_string(&type_output.into_tokens())
-                    } else {
-                        tokens_to_string(&type_output.into_tokens())
-                    };
+                    let type_str = colorizer.tokens(&type_output.into_tokens());
                     assoc_types.push(type_str);
                 }
                 ItemEnum::AssocConst { type_, value } => {
@@ -61,11 +57,7 @@ pub(crate) fn format_trait_children(
                         const_output.symbol(val);
                     }
 
-                    let const_str = if use_colors {
-                        tokens_to_colored_string(&const_output.into_tokens())
-                    } else {
-                        tokens_to_string(&const_output.into_tokens())
-                    };
+                    let const_str = colorizer.tokens(&const_output.into_tokens());
                     assoc_consts.push(const_str);
                 }
                 ItemEnum::Function(func) => {
@@ -78,11 +70,7 @@ pub(crate) fn format_trait_children(
                         &func.generics,
                         &func.header,
                     );
-                    let method_str = if use_colors {
-                        tokens_to_colored_string(&method_output.into_tokens())
-                    } else {
-                        tokens_to_string(&method_output.into_tokens())
-                    };
+                    let method_str = colorizer.tokens(&method_output.into_tokens());
 
                     // Check if this is a required or provided method
                     if func.has_body {

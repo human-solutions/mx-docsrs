@@ -1,18 +1,18 @@
 use anyhow::Result;
 use rustdoc_types::{Crate, ItemEnum, Variant};
 
+use crate::colorizer::Colorizer;
 use crate::doc::impl_kind::ImplKind;
 use crate::doc::render::RenderingContext;
-use crate::fmt::{tokens_to_colored_string, tokens_to_string};
 
 /// Format child items for an enum (variants, methods and trait implementations)
 pub(crate) fn format_enum_children(
     krate: &Crate,
     enum_: &rustdoc_types::Enum,
     output: &mut String,
-    use_colors: bool,
     context: &RenderingContext,
 ) -> Result<()> {
+    let colorizer = Colorizer::get();
     let mut variants = Vec::new();
     let mut methods = Vec::new();
     let mut trait_impls = Vec::new();
@@ -23,7 +23,7 @@ pub(crate) fn format_enum_children(
             && let ItemEnum::Variant(variant) = &variant_item.inner
         {
             let variant_str =
-                format_variant(variant_item.name.as_deref(), variant, use_colors, context);
+                format_variant(variant_item.name.as_deref(), variant, colorizer, context);
             variants.push(variant_str);
         }
     }
@@ -42,11 +42,7 @@ pub(crate) fn format_enum_children(
             if impl_.trait_.is_some() {
                 // This is a trait implementation
                 let impl_tokens = context.render_impl(impl_, &[], false);
-                let impl_str = if use_colors {
-                    tokens_to_colored_string(&impl_tokens.into_tokens())
-                } else {
-                    tokens_to_string(&impl_tokens.into_tokens())
-                };
+                let impl_str = colorizer.tokens(&impl_tokens.into_tokens());
                 trait_impls.push(impl_str);
             } else {
                 // This is an inherent impl - extract methods
@@ -62,11 +58,7 @@ pub(crate) fn format_enum_children(
                                 &func.generics,
                                 &func.header,
                             );
-                            let method_str = if use_colors {
-                                tokens_to_colored_string(&method_output.into_tokens())
-                            } else {
-                                tokens_to_string(&method_output.into_tokens())
-                            };
+                            let method_str = colorizer.tokens(&method_output.into_tokens());
                             methods.push(method_str);
                         }
                     }
@@ -115,7 +107,7 @@ pub(crate) fn format_enum_children(
 fn format_variant(
     name: Option<&str>,
     variant: &Variant,
-    use_colors: bool,
+    colorizer: &Colorizer,
     context: &RenderingContext,
 ) -> String {
     let mut variant_output = crate::fmt::Output::new();
@@ -152,11 +144,7 @@ fn format_variant(
         }
     }
 
-    if use_colors {
-        tokens_to_colored_string(&variant_output.into_tokens())
-    } else {
-        tokens_to_string(&variant_output.into_tokens())
-    }
+    colorizer.tokens(&variant_output.into_tokens())
 }
 
 /// Resolve tuple field IDs to their actual types
