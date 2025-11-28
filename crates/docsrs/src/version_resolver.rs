@@ -264,11 +264,11 @@ impl VersionResolver {
 
         // BFS from each workspace member
         for member_id in &self.metadata.workspace_members {
-            if let Some((version, chain)) =
+            if let Some((canonical_name, version, chain)) =
                 self.bfs_find_crate(&adj, &pkg_names, member_id, crate_name)
             {
                 return Some(ResolvedCrate {
-                    name: crate_name.to_string(),
+                    name: canonical_name,
                     version,
                     kind: DependencyKind::Normal, // Transitive deps are always "normal" from our perspective
                     is_local: false,
@@ -282,14 +282,14 @@ impl VersionResolver {
         None
     }
 
-    /// BFS to find a crate in the dependency graph, returning the path taken
+    /// BFS to find a crate in the dependency graph, returning the canonical name, version, and path taken
     fn bfs_find_crate(
         &self,
         adj: &HashMap<&PackageId, Vec<&PackageId>>,
         pkg_names: &HashMap<&PackageId, &str>,
         start: &PackageId,
         target: &str,
-    ) -> Option<(String, Vec<String>)> {
+    ) -> Option<(String, String, Vec<String>)> {
         let mut visited: HashSet<&PackageId> = HashSet::new();
         let mut queue: VecDeque<(&PackageId, Vec<String>)> = VecDeque::new();
 
@@ -312,10 +312,10 @@ impl VersionResolver {
 
                     // Check if this is our target
                     if normalize_crate_name(dep_name) == target {
-                        // Find version
+                        // Find version and canonical name
                         for pkg in &self.metadata.packages {
                             if &pkg.id == *dep_id {
-                                return Some((pkg.version.to_string(), new_path));
+                                return Some((pkg.name.to_string(), pkg.version.to_string(), new_path));
                             }
                         }
                     }
