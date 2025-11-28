@@ -536,11 +536,9 @@ dependencies = [
  "colored",
  "directories",
  "insta",
- "pulldown-cmark",
+ "rustdoc-fmt",
  "rustdoc-types",
  "serde_json",
- "syntect",
- "terminal-colorsaurus",
  "ureq",
  "zstd",
 ]
@@ -740,6 +738,12 @@ dependencies = [
 [[package]]
 name = "rustdoc-fmt"
 version = "0.1.0"
+dependencies = [
+ "colored",
+ "pulldown-cmark",
+ "syntect",
+ "terminal-colorsaurus",
+]
 
 [[package]]
 name = "rustdoc-types"

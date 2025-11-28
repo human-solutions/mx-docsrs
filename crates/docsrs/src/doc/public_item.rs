@@ -1,10 +1,9 @@
+use rustdoc_fmt::{Token, tokens_to_string};
 use rustdoc_types::Id;
 use std::fmt::Display;
 use std::hash::Hash;
 
 use crate::doc::render::RenderingContext;
-use crate::fmt::Token;
-use crate::fmt::tokens_to_string;
 use crate::proc::IntermediatePublicItem;
 
 /// Represent a public item of an analyzed crate, i.e. an item that forms part

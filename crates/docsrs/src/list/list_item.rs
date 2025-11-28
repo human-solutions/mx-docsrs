@@ -1,8 +1,9 @@
+use rustdoc_fmt::Output;
 use rustdoc_types::{
     Constant, Enum, Function, Id, ItemEnum, Module, Static, Struct, Trait, TypeAlias,
 };
 
-use crate::{fmt::Output, proc::IntermediatePublicItem};
+use crate::proc::IntermediatePublicItem;
 
 #[allow(dead_code)]
 #[derive(Clone)]

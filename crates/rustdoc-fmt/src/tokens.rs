@@ -52,6 +52,7 @@ impl Token {
     }
 }
 
-pub(crate) fn tokens_to_string(tokens: &[Token]) -> String {
+/// Convert a slice of tokens to a single string.
+pub fn tokens_to_string(tokens: &[Token]) -> String {
     tokens.iter().map(Token::text).collect()
 }

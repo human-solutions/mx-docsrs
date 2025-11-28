@@ -1,11 +1,9 @@
 mod cli;
 mod color;
-pub mod colorizer;
 mod crate_spec;
 mod doc;
 mod docfetch;
 mod ext;
-mod fmt;
 mod list;
 mod proc;
 mod util;
@@ -150,7 +148,7 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
             if list.len() == 1 {
                 doc::signature_for_id(&krate, &item_processor, &list[0].id)?
             } else {
-                let colorizer = colorizer::Colorizer::get();
+                let colorizer = rustdoc_fmt::Colorizer::get();
                 list.iter()
                     .map(|entry| colorizer.tokens(&entry.as_output().into_tokens()))
                     .collect::<Vec<String>>()

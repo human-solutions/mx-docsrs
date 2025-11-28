@@ -1,13 +1,9 @@
 //! Formats markdown documentation for terminal display with ANSI colors.
 
-use std::collections::HashMap;
-
 use pulldown_cmark::{CodeBlockKind, Event, Options, Parser, Tag, TagEnd};
-use rustdoc_types::{Crate, Id};
 
-use super::link_resolver::resolve_single_link;
 use crate::colorizer::Colorizer;
-use crate::proc::IntermediatePublicItem;
+use crate::link_resolver::LinkResolver;
 
 /// Formats markdown documentation for terminal display.
 ///
@@ -19,17 +15,12 @@ use crate::proc::IntermediatePublicItem;
 /// - Code blocks are syntax highlighted
 /// - Lists use bullet points
 /// - Block quotes use `│` prefix
-pub fn format_markdown(
-    docs: &str,
-    item_links: &HashMap<String, Id>,
-    krate: &Crate,
-    id_to_items: &HashMap<&Id, Vec<&IntermediatePublicItem<'_>>>,
-) -> String {
+pub fn format_markdown(docs: &str, resolver: &impl LinkResolver) -> String {
     let mut options = Options::empty();
     options.insert(Options::ENABLE_STRIKETHROUGH);
 
     let parser = Parser::new_ext(docs, options);
-    let mut formatter = MarkdownFormatter::new(item_links, krate, id_to_items);
+    let mut formatter = MarkdownFormatter::new(resolver);
 
     for event in parser {
         formatter.process_event(event);
@@ -38,12 +29,10 @@ pub fn format_markdown(
     formatter.finish()
 }
 
-struct MarkdownFormatter<'a> {
+struct MarkdownFormatter<'a, R: LinkResolver> {
     output: String,
     colorizer: &'static Colorizer,
-    item_links: &'a HashMap<String, Id>,
-    krate: &'a Crate,
-    id_to_items: &'a HashMap<&'a Id, Vec<&'a IntermediatePublicItem<'a>>>,
+    resolver: &'a R,
 
     // State tracking
     in_link: bool,
@@ -65,18 +54,12 @@ struct MarkdownFormatter<'a> {
     list_index: u64,
 }
 
-impl<'a> MarkdownFormatter<'a> {
-    fn new(
-        item_links: &'a HashMap<String, Id>,
-        krate: &'a Crate,
-        id_to_items: &'a HashMap<&'a Id, Vec<&'a IntermediatePublicItem<'a>>>,
-    ) -> Self {
+impl<'a, R: LinkResolver> MarkdownFormatter<'a, R> {
+    fn new(resolver: &'a R) -> Self {
         Self {
             output: String::new(),
             colorizer: Colorizer::get(),
-            item_links,
-            krate,
-            id_to_items,
+            resolver,
             in_link: false,
             link_text: String::new(),
             current_dest_url: String::new(),
@@ -106,13 +89,9 @@ impl<'a> MarkdownFormatter<'a> {
                 self.current_dest_url = dest_url.to_string();
             }
             Event::End(TagEnd::Link) => {
-                let resolved = resolve_single_link(
-                    &self.link_text,
-                    &self.current_dest_url,
-                    self.item_links,
-                    self.krate,
-                    self.id_to_items,
-                );
+                let resolved = self
+                    .resolver
+                    .resolve_link(&self.link_text, &self.current_dest_url);
                 self.push_text(&resolved);
                 self.in_link = false;
             }
@@ -306,35 +285,20 @@ impl<'a> MarkdownFormatter<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::link_resolver::DefaultLinkResolver;
 
     fn format_test(docs: &str) -> String {
         colored::control::set_override(false);
-        let result = format_markdown(docs, &HashMap::new(), &empty_crate(), &HashMap::new());
+        let result = format_markdown(docs, &DefaultLinkResolver);
         colored::control::unset_override();
         result
     }
 
     fn format_test_colored(docs: &str) -> String {
         colored::control::set_override(true);
-        let result = format_markdown(docs, &HashMap::new(), &empty_crate(), &HashMap::new());
+        let result = format_markdown(docs, &DefaultLinkResolver);
         colored::control::unset_override();
         result
-    }
-
-    fn empty_crate() -> Crate {
-        Crate {
-            root: Id(0),
-            crate_version: None,
-            includes_private: false,
-            index: HashMap::new(),
-            paths: HashMap::new(),
-            external_crates: HashMap::new(),
-            target: rustdoc_types::Target {
-                triple: String::new(),
-                target_features: vec![],
-            },
-            format_version: 0,
-        }
     }
 
     #[test]

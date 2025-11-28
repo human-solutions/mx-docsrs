@@ -1,7 +1,7 @@
 use anyhow::Result;
+use rustdoc_fmt::Colorizer;
 use rustdoc_types::Crate;
 
-use crate::colorizer::Colorizer;
 use crate::doc::render::RenderingContext;
 use crate::list::ListItem;
 

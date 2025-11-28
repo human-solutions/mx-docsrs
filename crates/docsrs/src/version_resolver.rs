@@ -315,7 +315,11 @@ impl VersionResolver {
                         // Find version and canonical name
                         for pkg in &self.metadata.packages {
                             if &pkg.id == *dep_id {
-                                return Some((pkg.name.to_string(), pkg.version.to_string(), new_path));
+                                return Some((
+                                    pkg.name.to_string(),
+                                    pkg.version.to_string(),
+                                    new_path,
+                                ));
                             }
                         }
                     }

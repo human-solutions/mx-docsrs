@@ -1,7 +1,7 @@
 use anyhow::Result;
+use rustdoc_fmt::{Colorizer, Output};
 use rustdoc_types::{Crate, ItemEnum};
 
-use crate::colorizer::Colorizer;
 use crate::doc::render::RenderingContext;
 
 /// Format child items for a trait (associated types, methods, etc.)
@@ -23,7 +23,7 @@ pub(crate) fn format_trait_children(
             match &item.inner {
                 ItemEnum::AssocType { type_, .. } => {
                     // Associated type
-                    let mut type_output = crate::fmt::Output::new();
+                    let mut type_output = Output::new();
                     type_output.keyword("type");
                     type_output.whitespace();
                     type_output.function(item.name.as_deref().unwrap_or("unknown"));
@@ -41,7 +41,7 @@ pub(crate) fn format_trait_children(
                 }
                 ItemEnum::AssocConst { type_, value } => {
                     // Associated constant
-                    let mut const_output = crate::fmt::Output::new();
+                    let mut const_output = Output::new();
                     const_output.keyword("const");
                     const_output.whitespace();
                     const_output.function(item.name.as_deref().unwrap_or("unknown"));
@@ -62,7 +62,7 @@ pub(crate) fn format_trait_children(
                 }
                 ItemEnum::Function(func) => {
                     // Method (required or provided)
-                    let mut name_output = crate::fmt::Output::new();
+                    let mut name_output = Output::new();
                     name_output.function(item.name.as_deref().unwrap_or("unknown"));
                     let method_output = context.render_function(
                         name_output,

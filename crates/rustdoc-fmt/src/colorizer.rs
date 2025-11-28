@@ -13,7 +13,7 @@ use syntect::parsing::SyntaxSet;
 use syntect::util::{LinesWithEndings, as_24_bit_terminal_escaped};
 use terminal_colorsaurus::{QueryOptions, ThemeMode, theme_mode};
 
-use crate::fmt::Token;
+use crate::Token;
 
 /// Global syntax set (loaded once on first use)
 static SYNTAX_SET: LazyLock<SyntaxSet> = LazyLock::new(SyntaxSet::load_defaults_newlines);
