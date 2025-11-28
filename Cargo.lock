@@ -738,6 +738,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustdoc-fmt"
+version = "0.1.0"
+
+[[package]]
 name = "rustdoc-types"
 version = "0.56.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

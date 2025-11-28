@@ -1,10 +1,6 @@
 [workspace]
 resolver = "2"
-members = [
-    "crates/docsrs",
-    "crates/test-visibility",
-    "crates/test-reexports",
-]
+members = ["crates/*"]
 
 [workspace.package]
 edition = "2024"
