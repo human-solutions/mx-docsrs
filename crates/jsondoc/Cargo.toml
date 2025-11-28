@@ -1,0 +1,8 @@
+[package]
+name = "jsondoc"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+rustdoc-types.workspace = true
+ouroboros = "0.18.5"

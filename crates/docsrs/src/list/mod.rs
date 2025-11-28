@@ -1,13 +1,12 @@
 pub use crate::list::list_item::ListItem;
-use crate::proc::ItemProcessor;
+use jsondoc::JsonDoc;
 
 mod list_item;
 
 /// Extract public API from a crate.
-pub(crate) fn list_items<'c>(item_processor: &ItemProcessor<'c>) -> Vec<ListItem<'c>> {
-    item_processor
-        .output
+pub(crate) fn list_items(doc: &JsonDoc) -> Vec<ListItem> {
+    doc.items()
         .iter()
-        .filter_map(ListItem::from_intermediate)
-        .collect::<Vec<_>>()
+        .filter_map(ListItem::from_jsondoc_item)
+        .collect()
 }

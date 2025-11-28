@@ -1,19 +1,99 @@
-use crate::{
-    doc::impl_kind::ImplKind,
-    ext::item_ext::ItemExt,
-    proc::{
-        crate_wrapper::CrateWrapper, intermediate_public_item::IntermediatePublicItem,
-        path_component::PathComponent, unprocessed_item::UnprocessedItem,
-    },
-};
+use ouroboros::self_referencing;
 use rustdoc_types::{Crate, Id, Impl, Item, ItemEnum, Module, Type, Use};
-use std::{
-    collections::{HashMap, VecDeque},
-    vec,
+use std::collections::{HashMap, VecDeque};
+
+use crate::{
+    crate_wrapper::CrateWrapper, impl_kind::ImplKind, item_ext::ItemExt, jsondoc_item::JsonDocItem,
+    path_component::PathComponent, unprocessed_item::UnprocessedItem,
 };
 
-/// Processes items to find more items and to figure out the path to each item.
-pub struct ItemProcessor<'c> {
+/// JSON documentation for a Rust crate.
+///
+/// Owns the rustdoc `Crate` data and provides structured access to public API items
+/// with their full paths.
+#[self_referencing]
+pub struct JsonDoc {
+    /// The owned crate data.
+    crate_data: Crate,
+
+    /// Processed items that borrow from crate_data.
+    #[borrows(crate_data)]
+    #[covariant]
+    items: Vec<JsonDocItem<'this>>,
+}
+
+impl From<Crate> for JsonDoc {
+    /// Create a new JsonDoc by processing the given Crate.
+    /// Takes ownership of the Crate.
+    fn from(crate_: Crate) -> Self {
+        JsonDocBuilder {
+            crate_data: crate_,
+            items_builder: |crate_ref: &Crate| process_crate(crate_ref),
+        }
+        .build()
+    }
+}
+
+impl JsonDoc {
+    /// Returns the processed items.
+    pub fn items(&self) -> &[JsonDocItem<'_>] {
+        self.borrow_items()
+    }
+
+    /// Map IDs to their public items.
+    pub fn id_to_items(&self) -> HashMap<&Id, Vec<&JsonDocItem<'_>>> {
+        let mut map: HashMap<&Id, Vec<&JsonDocItem<'_>>> = HashMap::new();
+        for item in self.borrow_items() {
+            map.entry(&item.item().id).or_default().push(item);
+        }
+        map
+    }
+
+    /// Returns the crate root module ID.
+    pub fn crate_root_id(&self) -> Id {
+        self.borrow_crate_data().root
+    }
+
+    /// Find the item ID for an exact path like "tokio::task".
+    /// Returns None if no item exists at that exact path.
+    pub fn find_item_by_path(&self, path: &str) -> Option<Id> {
+        for item in self.borrow_items() {
+            // Skip hidden items
+            if item.path().iter().any(|seg| seg.hide) {
+                continue;
+            }
+
+            // Build the path string
+            let item_path: String = item
+                .path()
+                .iter()
+                .filter_map(|seg| seg.item.name())
+                .collect::<Vec<_>>()
+                .join("::");
+
+            if item_path == path {
+                return Some(item.id());
+            }
+        }
+        None
+    }
+
+    /// Access the underlying crate data.
+    pub fn crate_data(&self) -> &Crate {
+        self.borrow_crate_data()
+    }
+}
+
+/// Process a crate into a list of public items.
+fn process_crate(crate_: &Crate) -> Vec<JsonDocItem<'_>> {
+    let mut processor = Processor::new(crate_);
+    processor.add_to_work_queue(vec![], None, crate_.root);
+    processor.run();
+    processor.output
+}
+
+/// Internal processor that works on borrowed crate data.
+struct Processor<'c> {
     /// The original and unmodified rustdoc JSON, in deserialized form.
     crate_: CrateWrapper<'c>,
 
@@ -21,19 +101,16 @@ pub struct ItemProcessor<'c> {
     work_queue: VecDeque<UnprocessedItem<'c>>,
 
     /// The output. A list of processed items.
-    pub output: Vec<IntermediatePublicItem<'c>>,
+    output: Vec<JsonDocItem<'c>>,
 }
 
-impl<'c> ItemProcessor<'c> {
-    pub(crate) fn process(crate_: &'c Crate) -> Self {
-        let mut me = ItemProcessor {
+impl<'c> Processor<'c> {
+    fn new(crate_: &'c Crate) -> Self {
+        Processor {
             crate_: CrateWrapper::new(crate_),
             work_queue: VecDeque::new(),
             output: vec![],
-        };
-        me.add_to_work_queue(vec![], None, crate_.root);
-        me.run();
-        me
+        }
     }
 
     /// Adds an item to the front of the work queue.
@@ -213,46 +290,5 @@ impl<'c> ItemProcessor<'c> {
         }
 
         self.crate_.get_item(id)
-    }
-
-    /// Map IDs to their public items.
-    pub fn id_to_items(&self) -> HashMap<&Id, Vec<&IntermediatePublicItem<'_>>> {
-        let mut id_to_items: HashMap<&Id, Vec<&IntermediatePublicItem<'_>>> = HashMap::new();
-        for finished_item in &self.output {
-            id_to_items
-                .entry(&finished_item.item().id)
-                .or_default()
-                .push(finished_item);
-        }
-        id_to_items
-    }
-
-    /// Returns the crate root module ID.
-    pub fn crate_root_id(&self) -> Id {
-        self.crate_.root()
-    }
-
-    /// Find the item ID for an exact path like "tokio::task".
-    /// Returns None if no item exists at that exact path.
-    pub fn find_item_by_path(&self, path: &str) -> Option<Id> {
-        for item in &self.output {
-            // Skip hidden items
-            if item.path().iter().any(|seg| seg.hide) {
-                continue;
-            }
-
-            // Build the path string
-            let item_path: String = item
-                .path()
-                .iter()
-                .filter_map(|seg| seg.item.name())
-                .collect::<Vec<_>>()
-                .join("::");
-
-            if item_path == path {
-                return Some(item.id());
-            }
-        }
-        None
     }
 }

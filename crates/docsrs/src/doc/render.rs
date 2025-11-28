@@ -1,5 +1,4 @@
-#![allow(clippy::unused_self)]
-use crate::proc::{IntermediatePublicItem, NameableItem, PathComponent};
+use jsondoc::{JsonDocItem, NameableItem, PathComponent};
 use rustdoc_fmt::Output;
 use std::{borrow::Cow, cmp::Ordering, collections::HashMap};
 
@@ -19,11 +18,11 @@ pub struct RenderingContext<'c> {
     pub crate_: &'c Crate,
 
     /// Given a rustdoc JSON ID, keeps track of what public items that have this Id.
-    pub id_to_items: HashMap<&'c Id, Vec<&'c IntermediatePublicItem<'c>>>,
+    pub id_to_items: HashMap<&'c Id, Vec<&'c JsonDocItem<'c>>>,
 }
 
 impl<'c> RenderingContext<'c> {
-    pub fn token_stream(&self, public_item: &IntermediatePublicItem<'c>) -> Output {
+    pub fn token_stream(&self, public_item: &JsonDocItem<'c>) -> Output {
         let item = public_item.item();
         let item_path = public_item.path();
 
@@ -1050,7 +1049,7 @@ impl<'c> RenderingContext<'c> {
         output
     }
 
-    fn best_item_for_id(&self, id: &'c Id) -> Option<&'c IntermediatePublicItem<'c>> {
+    fn best_item_for_id(&self, id: &'c Id) -> Option<&'c JsonDocItem<'c>> {
         match self.id_to_items.get(&id) {
             None => None,
             Some(items) => {

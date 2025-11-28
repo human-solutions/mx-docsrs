@@ -22,6 +22,7 @@ serde_json.workspace = true
 directories.workspace = true
 colored.workspace = true
 rustdoc-fmt = { path = "../rustdoc-fmt" }
+jsondoc = { path = "../jsondoc" }
 
 [dev-dependencies]
 insta.workspace = true

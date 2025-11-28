@@ -2,10 +2,9 @@
 
 use std::{cmp::Ordering, collections::HashMap};
 
+use jsondoc::JsonDocItem;
 use rustdoc_fmt::LinkResolver;
 use rustdoc_types::{Crate, Id};
-
-use crate::proc::IntermediatePublicItem;
 
 /// A link resolver that uses rustdoc data to resolve intra-doc links.
 pub struct RustdocLinkResolver<'a> {
@@ -14,7 +13,7 @@ pub struct RustdocLinkResolver<'a> {
     /// The rustdoc crate data
     pub krate: &'a Crate,
     /// Mapping from IDs to public items
-    pub id_to_items: &'a HashMap<&'a Id, Vec<&'a IntermediatePublicItem<'a>>>,
+    pub id_to_items: &'a HashMap<&'a Id, Vec<&'a JsonDocItem<'a>>>,
 }
 
 impl<'a> RustdocLinkResolver<'a> {
@@ -80,9 +79,7 @@ impl<'a> RustdocLinkResolver<'a> {
     }
 
     /// Select the best public item path (same logic as RenderingContext::best_item_for_id)
-    fn best_item_for_id(
-        items: &[&'a IntermediatePublicItem<'a>],
-    ) -> Option<&'a IntermediatePublicItem<'a>> {
+    fn best_item_for_id(items: &[&'a JsonDocItem<'a>]) -> Option<&'a JsonDocItem<'a>> {
         items
             .iter()
             .max_by(|a, b| {
@@ -106,8 +103,8 @@ impl<'a> RustdocLinkResolver<'a> {
             .copied()
     }
 
-    /// Convert an IntermediatePublicItem to a path string like "tokio::task::JoinHandle"
-    fn item_to_path_string(item: &IntermediatePublicItem<'_>) -> String {
+    /// Convert a JsonDocItem to a path string like "tokio::task::JoinHandle"
+    fn item_to_path_string(item: &JsonDocItem<'_>) -> String {
         item.path()
             .iter()
             .filter(|c| !c.hide)

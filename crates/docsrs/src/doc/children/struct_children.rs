@@ -1,8 +1,8 @@
 use anyhow::Result;
+use jsondoc::ImplKind;
 use rustdoc_fmt::{Colorizer, Output};
 use rustdoc_types::{Crate, ItemEnum, StructKind, Visibility};
 
-use crate::doc::impl_kind::ImplKind;
 use crate::doc::render::RenderingContext;
 
 /// Format child items for a struct (fields, methods and trait implementations)
