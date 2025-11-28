@@ -268,7 +268,7 @@ impl VersionResolver {
                 self.bfs_find_crate(&adj, &pkg_names, member_id, crate_name)
             {
                 return Some(ResolvedCrate {
-                    name: crate_name.replace('_', "-"), // Convert back to canonical form
+                    name: crate_name.to_string(),
                     version,
                     kind: DependencyKind::Normal, // Transitive deps are always "normal" from our perspective
                     is_local: false,
