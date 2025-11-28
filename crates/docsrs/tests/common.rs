@@ -7,19 +7,31 @@ pub fn run_cli(args: &[&str]) -> (String, String, bool) {
 
 /// Normalize output by replacing machine-specific paths with placeholders
 fn normalize_output(output: &str) -> String {
-    // Replace "Local crate found at: /path/to/file.json" with a normalized version
-    let mut result = String::new();
+    let mut lines: Vec<String> = Vec::new();
+
     for line in output.lines() {
-        if line.starts_with("Local crate found at: ") {
-            result.push_str("Local crate found at: [LOCAL_PATH]\n");
+        let normalized = if line.starts_with("Local crate found at: ") {
+            // Replace "Local crate found at: /path/to/file.json"
+            "Local crate found at: [LOCAL_PATH]".to_string()
+        } else if let Some(rest) = line.strip_prefix("Using local dependency at /") {
+            // Replace "Using local dependency at /path/to/crate (version X.Y.Z)"
+            // Find " (version " to extract the version part
+            if let Some(version_start) = rest.find(" (version ") {
+                let version_part = &rest[version_start..]; // " (version X.Y.Z)"
+                format!("Using local dependency at [LOCAL_PATH]{version_part}")
+            } else {
+                line.to_string()
+            }
         } else {
-            result.push_str(line);
-            result.push('\n');
-        }
+            line.to_string()
+        };
+        lines.push(normalized);
     }
-    // Remove trailing newline if original didn't have one
-    if !output.ends_with('\n') && result.ends_with('\n') {
-        result.pop();
+
+    let mut result = lines.join("\n");
+    // Preserve trailing newline if original had one
+    if output.ends_with('\n') {
+        result.push('\n');
     }
     result
 }
