@@ -22,6 +22,8 @@ pub struct MarkdownStats {
     pub unordered_lists: usize,
     pub nested_lists: usize,
     pub list_items: usize,
+    pub list_nesting_depths: HashMap<usize, usize>, // depth -> count of lists at that depth
+    pub list_depth_max: usize,
     pub block_quotes: usize,
     pub emphasis: usize,
     pub strong: usize,
@@ -32,6 +34,7 @@ pub struct MarkdownStats {
     pub footnote_definitions: usize,
     pub footnote_references: usize,
     pub html_blocks: usize,
+    pub html_tag_types: HashMap<String, usize>, // tag name -> count
     pub inline_html: usize,
     pub hard_breaks: usize,
     pub soft_breaks: usize,
@@ -64,6 +67,10 @@ impl MarkdownStats {
         self.unordered_lists += other.unordered_lists;
         self.nested_lists += other.nested_lists;
         self.list_items += other.list_items;
+        for (depth, count) in &other.list_nesting_depths {
+            *self.list_nesting_depths.entry(*depth).or_insert(0) += count;
+        }
+        self.list_depth_max = self.list_depth_max.max(other.list_depth_max);
         self.block_quotes += other.block_quotes;
         self.emphasis += other.emphasis;
         self.strong += other.strong;
@@ -74,6 +81,9 @@ impl MarkdownStats {
         self.footnote_definitions += other.footnote_definitions;
         self.footnote_references += other.footnote_references;
         self.html_blocks += other.html_blocks;
+        for (tag, count) in &other.html_tag_types {
+            *self.html_tag_types.entry(tag.clone()).or_insert(0) += count;
+        }
         self.inline_html += other.inline_html;
         self.hard_breaks += other.hard_breaks;
         self.soft_breaks += other.soft_breaks;
@@ -131,10 +141,12 @@ pub fn analyze_markdown(markdown: &str) -> MarkdownStats {
 
                 // Track list nesting
                 if matches!(tag, Tag::List(_)) {
-                    if list_depth > 0 {
+                    list_depth += 1;
+                    if list_depth > 1 {
                         stats.nested_lists += 1;
                     }
-                    list_depth += 1;
+                    *stats.list_nesting_depths.entry(list_depth).or_insert(0) += 1;
+                    stats.list_depth_max = stats.list_depth_max.max(list_depth);
                 }
 
                 count_start_tag(&mut stats, tag);
@@ -151,8 +163,11 @@ pub fn analyze_markdown(markdown: &str) -> MarkdownStats {
             Event::Code(_) => {
                 stats.inline_code += 1;
             }
-            Event::Html(_) => {
+            Event::Html(html) => {
                 stats.html_blocks += 1;
+                if let Some(tag) = extract_html_tag(&html) {
+                    *stats.html_tag_types.entry(tag).or_insert(0) += 1;
+                }
             }
             Event::InlineHtml(_) => {
                 stats.inline_html += 1;
@@ -278,6 +293,31 @@ fn normalize_rust_language(lang: &str) -> String {
     lang_str
 }
 
+/// Extract the HTML tag name from an HTML string.
+/// E.g., "<div class='foo'>" -> "div", "</span>" -> "span", "<!-- comment -->" -> "!--"
+fn extract_html_tag(html: &str) -> Option<String> {
+    let trimmed = html.trim();
+    if !trimmed.starts_with('<') {
+        return None;
+    }
+
+    // Skip the '<' and optional '/'
+    let after_bracket = trimmed.strip_prefix('<').unwrap_or(trimmed);
+    let after_slash = after_bracket.strip_prefix('/').unwrap_or(after_bracket);
+
+    // Find the end of the tag name (space, '>', '/', or end of string)
+    let tag_end = after_slash
+        .find(|c: char| c.is_whitespace() || c == '>' || c == '/')
+        .unwrap_or(after_slash.len());
+
+    let tag_name = &after_slash[..tag_end];
+    if tag_name.is_empty() {
+        return None;
+    }
+
+    Some(tag_name.to_lowercase())
+}
+
 fn classify_link(link_stats: &mut LinkTypeStats, url: &str) {
     if url.starts_with("http://") || url.starts_with("https://") {
         link_stats.external_http += 1;
@@ -366,5 +406,34 @@ mod tests {
         assert_eq!(normalize_rust_language("ignore"), "rust");
         assert_eq!(normalize_rust_language("json"), "json");
         assert_eq!(normalize_rust_language("bash"), "bash");
+    }
+
+    #[test]
+    fn test_extract_html_tag() {
+        assert_eq!(extract_html_tag("<div>"), Some("div".to_string()));
+        assert_eq!(extract_html_tag("<DIV>"), Some("div".to_string()));
+        assert_eq!(extract_html_tag("</div>"), Some("div".to_string()));
+        assert_eq!(extract_html_tag("<br/>"), Some("br".to_string()));
+        assert_eq!(extract_html_tag("<br />"), Some("br".to_string()));
+        assert_eq!(
+            extract_html_tag("<div class='foo'>"),
+            Some("div".to_string())
+        );
+        assert_eq!(
+            extract_html_tag("<!-- comment -->"),
+            Some("!--".to_string())
+        );
+        assert_eq!(extract_html_tag("not html"), None);
+        assert_eq!(extract_html_tag("<>"), None);
+    }
+
+    #[test]
+    fn test_list_nesting_depths() {
+        let md = "- item 1\n  - nested 1\n    - deep nested\n  - nested 2\n- item 2";
+        let stats = analyze_markdown(md);
+        assert_eq!(stats.list_depth_max, 3);
+        assert_eq!(stats.list_nesting_depths.get(&1), Some(&1)); // 1 top-level list
+        assert_eq!(stats.list_nesting_depths.get(&2), Some(&1)); // 1 depth-2 list
+        assert_eq!(stats.list_nesting_depths.get(&3), Some(&1)); // 1 depth-3 list
     }
 }

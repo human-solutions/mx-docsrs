@@ -22,7 +22,7 @@ enum Commands {
     /// Analyze all configured crates
     Analyze {
         /// Output directory for results
-        #[arg(short, long, default_value = "output")]
+        #[arg(short, long, default_value = "target/rustdoc-analysis")]
         output: PathBuf,
 
         /// Skip crate download cache

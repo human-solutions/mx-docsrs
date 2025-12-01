@@ -147,6 +147,14 @@ fn calculate_prevalence(stats: &AggregateStats) -> HashMap<String, f64> {
         "task_lists".to_string(),
         estimate_prevalence(agg.task_list_markers, total),
     );
+    prevalence.insert(
+        "html_blocks".to_string(),
+        estimate_prevalence(agg.html_blocks, total),
+    );
+    prevalence.insert(
+        "nested_lists".to_string(),
+        estimate_prevalence(agg.nested_lists, total),
+    );
 
     prevalence
 }
@@ -252,6 +260,50 @@ pub fn generate_markdown_report(report: &AnalysisReport) -> String {
     for (name, count) in link_types {
         let pct = count as f64 / total_links * 100.0;
         md.push_str(&format!("| {} | {} | {:.1}% |\n", name, count, pct));
+    }
+
+    // Heading levels
+    md.push_str("\n## Heading Levels\n\n");
+    md.push_str("| Level | Count | % of headings |\n");
+    md.push_str("|-------|-------|---------------|\n");
+
+    let total_headings = agg.headings.max(1) as f64;
+    let mut heading_levels: Vec<_> = agg.heading_levels.iter().collect();
+    heading_levels.sort_by(|a, b| a.0.cmp(b.0)); // Sort by level (h1, h2, h3, h4)
+
+    for (level, count) in heading_levels {
+        let pct = *count as f64 / total_headings * 100.0;
+        md.push_str(&format!("| {} | {} | {:.1}% |\n", level, count, pct));
+    }
+
+    // List nesting depths
+    md.push_str("\n## List Nesting Depths\n\n");
+    md.push_str("| Depth | Count | % of lists |\n");
+    md.push_str("|-------|-------|------------|\n");
+
+    let total_lists = agg.lists.max(1) as f64;
+    let mut list_depths: Vec<_> = agg.list_nesting_depths.iter().collect();
+    list_depths.sort_by(|a, b| a.0.cmp(b.0)); // Sort by depth
+
+    for (depth, count) in list_depths {
+        let pct = *count as f64 / total_lists * 100.0;
+        md.push_str(&format!("| {} | {} | {:.1}% |\n", depth, count, pct));
+    }
+
+    // HTML block tags
+    if agg.html_blocks > 0 {
+        md.push_str("\n## HTML Block Tags\n\n");
+        md.push_str("| Tag | Count | % of HTML blocks |\n");
+        md.push_str("|-----|-------|------------------|\n");
+
+        let total_html = agg.html_blocks.max(1) as f64;
+        let mut html_tags: Vec<_> = agg.html_tag_types.iter().collect();
+        html_tags.sort_by(|a, b| b.1.cmp(a.1)); // Sort by count descending
+
+        for (tag, count) in html_tags.iter().take(10) {
+            let pct = **count as f64 / total_html * 100.0;
+            md.push_str(&format!("| `<{}>` | {} | {:.1}% |\n", tag, count, pct));
+        }
     }
 
     // Feature gap analysis
