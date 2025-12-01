@@ -346,16 +346,18 @@ impl VersionResolver {
     ///
     /// Returns None if the crate is not a workspace member or if the path doesn't exist
     pub fn get_local_crate_doc_path(&self, crate_name: &str) -> Option<PathBuf> {
-        if !self.is_local_crate(crate_name) {
+        // Normalize crate name: rustdoc generates JSON with underscores (e.g., test_visibility.json)
+        let normalized = normalize_crate_name(crate_name);
+
+        if !self.is_local_crate(&normalized) {
             return None;
         }
 
-        // Crate names are already normalized (hyphens → underscores) at input
         let doc_path: PathBuf = self
             .metadata
             .target_directory
             .join("doc")
-            .join(format!("{}.json", crate_name))
+            .join(format!("{}.json", normalized))
             .into();
 
         if doc_path.exists() {

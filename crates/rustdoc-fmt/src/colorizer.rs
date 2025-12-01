@@ -131,15 +131,28 @@ impl Colorizer {
     /// Create a new colorizer, detecting theme from terminal.
     fn new() -> Self {
         // Detect terminal theme (dark/light)
-        let theme_name = match theme_mode(QueryOptions::default()) {
-            Ok(ThemeMode::Light) => "InspiredGitHub",
-            Ok(ThemeMode::Dark) | Err(_) => "base16-eighties.dark",
+        // Skip terminal detection in test environments to avoid hangs with cargo-nextest
+        // See: https://github.com/bash/terminal-colorsaurus/issues/38
+        let theme_name = if Self::is_test_environment() {
+            "base16-eighties.dark"
+        } else {
+            match theme_mode(QueryOptions::default()) {
+                Ok(ThemeMode::Light) => "InspiredGitHub",
+                Ok(ThemeMode::Dark) | Err(_) => "base16-eighties.dark",
+            }
         };
 
         let theme = &THEME_SET.themes[theme_name];
         let scheme = ColorScheme::from_theme(theme);
 
         Self { scheme, theme_name }
+    }
+
+    /// Check if we're running in a test environment where terminal queries may hang.
+    fn is_test_environment() -> bool {
+        // NEXTEST is set by cargo-nextest
+        // RUST_TEST_THREADS is set by cargo test
+        std::env::var("NEXTEST").is_ok() || std::env::var("RUST_TEST_THREADS").is_ok()
     }
 
     /// Get the global colorizer instance.
