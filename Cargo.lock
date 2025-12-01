@@ -794,26 +794,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "rustdoc-analyzer"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "directories",
- "pulldown-cmark",
- "rustdoc-types",
- "serde",
- "serde_json",
- "ureq",
- "zstd",
-]
-
-[[package]]
 name = "rustdoc-fmt"
 version = "0.1.0"
 dependencies = [
  "colored",
- "insta",
  "pulldown-cmark",
  "syntect",
  "terminal-colorsaurus",
