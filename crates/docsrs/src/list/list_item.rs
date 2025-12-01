@@ -1,35 +1,32 @@
-use rustdoc_types::{
-    Constant, Enum, Function, Id, ItemEnum, Module, Static, Struct, Trait, TypeAlias,
-};
+use jsondoc::JsonDocItem;
+use rustdoc_fmt::Output;
+use rustdoc_types::{Id, ItemEnum};
 
-use crate::{fmt::Output, proc::IntermediatePublicItem};
-
-#[allow(dead_code)]
-#[derive(Clone)]
-pub enum EntryKind<'c> {
-    Module(&'c Module),
-    Struct(&'c Struct),
-    Enum(&'c Enum),
-    Trait(&'c Trait),
-    Function(&'c Function),
-    Constant(&'c Constant),
-    Static(&'c Static),
-    TypeAlias(&'c TypeAlias),
-    Macro(&'c str),
+#[derive(Clone, Copy)]
+pub enum EntryKind {
+    Module,
+    Struct,
+    Enum,
+    Trait,
+    Function,
+    Constant,
+    Static,
+    TypeAlias,
+    Macro,
 }
 
-impl<'c> EntryKind<'c> {
-    fn from_item_enum(item: &'c ItemEnum) -> Option<Self> {
+impl EntryKind {
+    fn from_item_enum(item: &ItemEnum) -> Option<Self> {
         Some(match item {
-            ItemEnum::Constant { const_, .. } => EntryKind::Constant(const_),
-            ItemEnum::Function(f) => EntryKind::Function(f),
-            ItemEnum::Module(module) => EntryKind::Module(module),
-            ItemEnum::Struct(s) => EntryKind::Struct(s),
-            ItemEnum::Enum(e) => EntryKind::Enum(e),
-            ItemEnum::Trait(t) => EntryKind::Trait(t),
-            ItemEnum::TypeAlias(ta) => EntryKind::TypeAlias(ta),
-            ItemEnum::Macro(m) => EntryKind::Macro(m),
-            ItemEnum::Static(s) => EntryKind::Static(s),
+            ItemEnum::Constant { .. } => EntryKind::Constant,
+            ItemEnum::Function(_) => EntryKind::Function,
+            ItemEnum::Module(_) => EntryKind::Module,
+            ItemEnum::Struct(_) => EntryKind::Struct,
+            ItemEnum::Enum(_) => EntryKind::Enum,
+            ItemEnum::Trait(_) => EntryKind::Trait,
+            ItemEnum::TypeAlias(_) => EntryKind::TypeAlias,
+            ItemEnum::Macro(_) => EntryKind::Macro,
+            ItemEnum::Static(_) => EntryKind::Static,
             ItemEnum::ProcMacro(_)
             | ItemEnum::Primitive(_)
             | ItemEnum::Variant(_)
@@ -45,17 +42,17 @@ impl<'c> EntryKind<'c> {
         })
     }
 
-    fn keyword(&self) -> &'static str {
+    fn keyword(self) -> &'static str {
         match self {
-            EntryKind::Module(_) => "mod   ",
-            EntryKind::Struct(_) => "struct",
-            EntryKind::Enum(_) => "enum  ",
-            EntryKind::Trait(_) => "trait ",
-            EntryKind::Function(_) => "fn    ",
-            EntryKind::Constant(_) => "const ",
-            EntryKind::Static(_) => "static",
-            EntryKind::TypeAlias(_) => "type  ",
-            EntryKind::Macro(_) => "macro ",
+            EntryKind::Module => "mod   ",
+            EntryKind::Struct => "struct",
+            EntryKind::Enum => "enum  ",
+            EntryKind::Trait => "trait ",
+            EntryKind::Function => "fn    ",
+            EntryKind::Constant => "const ",
+            EntryKind::Static => "static",
+            EntryKind::TypeAlias => "type  ",
+            EntryKind::Macro => "macro ",
         }
     }
 }
@@ -63,23 +60,23 @@ impl<'c> EntryKind<'c> {
 /// Represent a public item of an analyzed crate, i.e. an item that forms part
 /// of the public API of a crate.
 #[derive(Clone)]
-pub struct ListItem<'c> {
-    module: Vec<(String, EntryKind<'c>)>,
+pub struct ListItem {
+    module: Vec<(String, EntryKind)>,
     pub path: String,
-    kind: EntryKind<'c>,
+    kind: EntryKind,
     pub id: Id,
 }
 
-impl<'c> ListItem<'c> {
-    pub fn from_intermediate(intermediate: &IntermediatePublicItem<'c>) -> Option<Self> {
-        let kind = EntryKind::from_item_enum(&intermediate.item().inner)?;
+impl ListItem {
+    pub fn from_jsondoc_item(item: &JsonDocItem<'_>) -> Option<Self> {
+        let kind = EntryKind::from_item_enum(&item.item().inner)?;
 
         // Skip items whose path contains hidden components (e.g., impl methods)
-        if intermediate.path().iter().any(|seg| seg.hide) {
+        if item.path().iter().any(|seg| seg.hide) {
             return None;
         }
 
-        let module = intermediate
+        let module: Vec<(String, EntryKind)> = item
             .path()
             .iter()
             .filter_map(|seg| {
@@ -87,7 +84,7 @@ impl<'c> ListItem<'c> {
                 let kind = EntryKind::from_item_enum(&seg.item.item.inner)?;
                 Some((name, kind))
             })
-            .collect::<Vec<(String, EntryKind<'c>)>>();
+            .collect();
 
         let path = module
             .iter()
@@ -99,7 +96,7 @@ impl<'c> ListItem<'c> {
             module,
             path,
             kind,
-            id: intermediate.id(),
+            id: item.id(),
         })
     }
 
@@ -113,25 +110,25 @@ impl<'c> ListItem<'c> {
             let is_last = i == last_idx;
             if is_last {
                 match self.kind {
-                    EntryKind::Macro(_) => out.identifier(seg).symbol("!"),
-                    EntryKind::Constant(_) | EntryKind::Static(_) => out.symbol(seg),
-                    EntryKind::Enum(_)
-                    | EntryKind::Struct(_)
-                    | EntryKind::Trait(_)
-                    | EntryKind::TypeAlias(_) => out.type_(seg),
-                    EntryKind::Function(_) => out.function(seg),
+                    EntryKind::Macro => out.identifier(seg).symbol("!"),
+                    EntryKind::Constant | EntryKind::Static => out.symbol(seg),
+                    EntryKind::Enum
+                    | EntryKind::Struct
+                    | EntryKind::Trait
+                    | EntryKind::TypeAlias => out.type_(seg),
+                    EntryKind::Function => out.function(seg),
                     _ => out.identifier(seg),
                 };
             } else {
                 // Apply correct coloring based on segment kind
                 match seg_kind {
-                    EntryKind::Enum(_)
-                    | EntryKind::Struct(_)
-                    | EntryKind::Trait(_)
-                    | EntryKind::TypeAlias(_) => out.type_(seg),
-                    EntryKind::Function(_) => out.function(seg),
-                    EntryKind::Macro(_) => out.identifier(seg).symbol("!"),
-                    EntryKind::Constant(_) | EntryKind::Static(_) => out.symbol(seg),
+                    EntryKind::Enum
+                    | EntryKind::Struct
+                    | EntryKind::Trait
+                    | EntryKind::TypeAlias => out.type_(seg),
+                    EntryKind::Function => out.function(seg),
+                    EntryKind::Macro => out.identifier(seg).symbol("!"),
+                    EntryKind::Constant | EntryKind::Static => out.symbol(seg),
                     _ => out.identifier(seg),
                 };
                 out.symbol("::");

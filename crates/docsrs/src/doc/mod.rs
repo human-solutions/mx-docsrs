@@ -1,13 +1,10 @@
 use anyhow::Result;
-use rustdoc_types::{Crate, Id};
-
-use crate::proc::ItemProcessor;
+use jsondoc::JsonDoc;
+use rustdoc_types::Id;
 
 mod children;
 mod doc_formatter;
-pub(crate) mod impl_kind;
 mod link_resolver;
-mod markdown_formatter;
 mod public_item;
 mod render;
 
@@ -15,23 +12,23 @@ use doc_formatter::format_doc;
 use public_item::PublicItem;
 use render::RenderingContext;
 
-pub fn signature_for_id(krate: &Crate, item_processor: &ItemProcessor, id: &Id) -> Result<String> {
-    // Find the intermediate item with the matching id
-    let intermediate_item = item_processor
-        .output
+pub fn signature_for_id(doc: &JsonDoc, id: &Id) -> Result<String> {
+    // Find the item with the matching id
+    let item = doc
+        .items()
         .iter()
         .find(|item| item.id() == *id)
         .ok_or_else(|| anyhow::anyhow!("Item with id {:?} not found", id))?;
 
     // Create rendering context
     let context = RenderingContext {
-        crate_: krate,
-        id_to_items: item_processor.id_to_items(),
+        crate_: doc.crate_data(),
+        id_to_items: doc.id_to_items(),
     };
 
     // Convert to PublicItem
-    let public_item = PublicItem::from_intermediate_public_item(&context, intermediate_item);
+    let public_item = PublicItem::from_jsondoc_item(&context, item);
 
     // Format the documentation
-    format_doc(krate, &public_item, &context)
+    format_doc(doc.crate_data(), &public_item, &context)
 }

@@ -1,7 +1,7 @@
 use anyhow::Result;
+use rustdoc_fmt::Colorizer;
 use rustdoc_types::Crate;
 
-use crate::colorizer::Colorizer;
 use crate::doc::render::RenderingContext;
 use crate::list::ListItem;
 
@@ -16,12 +16,12 @@ pub(crate) fn format_module_children(
     let mut items: Vec<ListItem> = Vec::new();
 
     for item_id in &module.items {
-        // Look up the IntermediatePublicItem via id_to_items
-        if let Some(intermediate_items) = context.id_to_items.get(item_id) {
+        // Look up the JsonDocItem via id_to_items
+        if let Some(jsondoc_items) = context.id_to_items.get(item_id) {
             // Get the first (best) item for this ID
-            if let Some(intermediate) = intermediate_items.first() {
+            if let Some(jsondoc_item) = jsondoc_items.first() {
                 // Convert to ListItem (handles visibility filtering internally)
-                if let Some(list_item) = ListItem::from_intermediate(intermediate) {
+                if let Some(list_item) = ListItem::from_jsondoc_item(jsondoc_item) {
                     items.push(list_item);
                 }
             }

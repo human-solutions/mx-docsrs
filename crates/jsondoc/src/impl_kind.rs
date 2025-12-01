@@ -1,7 +1,7 @@
 use rustdoc_types::{Attribute, Impl, Item};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) enum ImplKind {
+pub enum ImplKind {
     /// E.g. `impl Foo` or `impl<'a> Foo<'a>`
     Inherent,
 
@@ -19,7 +19,7 @@ pub(crate) enum ImplKind {
 }
 
 impl ImplKind {
-    pub(crate) fn from(impl_item: &Item, impl_: &Impl) -> Self {
+    pub fn from(impl_item: &Item, impl_: &Impl) -> Self {
         let has_blanket_impl = impl_.blanket_impl.is_some();
         let is_automatically_derived = impl_item.attrs.contains(&Attribute::AutomaticallyDerived);
 
@@ -35,7 +35,7 @@ impl ImplKind {
 
 impl ImplKind {
     /// Check if this impl should be included (hardcoded to -s -s behavior).
-    pub(crate) fn is_active(&self) -> bool {
+    pub fn is_active(&self) -> bool {
         match self {
             ImplKind::Blanket => false,    // omit_blanket_impls: true
             ImplKind::AutoTrait => false,  // omit_auto_trait_impls: true

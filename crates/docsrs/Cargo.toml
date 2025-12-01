@@ -21,9 +21,8 @@ zstd.workspace = true
 serde_json.workspace = true
 directories.workspace = true
 colored.workspace = true
-pulldown-cmark.workspace = true
-syntect.workspace = true
-terminal-colorsaurus.workspace = true
+rustdoc-fmt = { path = "../rustdoc-fmt" }
+jsondoc = { path = "../jsondoc" }
 
 [dev-dependencies]
 insta.workspace = true

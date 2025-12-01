@@ -1,10 +1,10 @@
 use rustdoc_types::{Id, Item, Type};
 
-use super::intermediate_public_item::IntermediatePublicItem;
-use super::nameable_item::NameableItem;
-use super::path_component::PathComponent;
+use crate::jsondoc_item::JsonDocItem;
+use crate::nameable_item::NameableItem;
+use crate::path_component::PathComponent;
 
-/// Items in rustdoc JSON reference each other by Id. The [`ItemProcessor`]
+/// Items in rustdoc JSON reference each other by Id. The processor
 /// essentially takes one Id at a time and figure out what to do with it. Once
 /// complete, the item is ready to be listed as part of the public API, and
 /// optionally can also be used as part of a path to another (child) item.
@@ -24,13 +24,13 @@ pub(crate) struct UnprocessedItem<'c> {
 }
 
 impl<'c> UnprocessedItem<'c> {
-    /// Turns an [`UnprocessedItem`] into a finished [`IntermediatePublicItem`].
+    /// Turns an [`UnprocessedItem`] into a finished [`JsonDocItem`].
     pub(crate) fn finish(
         mut self,
         item: &'c Item,
         overridden_name: Option<String>,
         type_: Option<&'c Type>,
-    ) -> IntermediatePublicItem<'c> {
+    ) -> JsonDocItem<'c> {
         let mut path = self.parent_path.split_off(0);
 
         path.push(PathComponent {
@@ -42,6 +42,6 @@ impl<'c> UnprocessedItem<'c> {
             hide: false,
         });
 
-        IntermediatePublicItem::new(path, self.parent_id, item.id)
+        JsonDocItem::new(path, self.parent_id, item.id)
     }
 }

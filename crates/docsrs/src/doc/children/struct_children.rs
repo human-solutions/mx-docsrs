@@ -1,8 +1,8 @@
 use anyhow::Result;
+use jsondoc::ImplKind;
+use rustdoc_fmt::{Colorizer, Output};
 use rustdoc_types::{Crate, ItemEnum, StructKind, Visibility};
 
-use crate::colorizer::Colorizer;
-use crate::doc::impl_kind::ImplKind;
 use crate::doc::render::RenderingContext;
 
 /// Format child items for a struct (fields, methods and trait implementations)
@@ -28,7 +28,7 @@ pub(crate) fn format_struct_children(
                     && let ItemEnum::StructField(field_type) = &field_item.inner
                 {
                     let field_name = field_item.name.as_deref().unwrap_or("unknown");
-                    let mut field_output = crate::fmt::Output::new();
+                    let mut field_output = Output::new();
                     field_output.qualifier("pub");
                     field_output.whitespace();
                     field_output.function(field_name);
@@ -49,7 +49,7 @@ pub(crate) fn format_struct_children(
                     && matches!(field_item.visibility, Visibility::Public)
                     && let ItemEnum::StructField(field_type) = &field_item.inner
                 {
-                    let mut field_output = crate::fmt::Output::new();
+                    let mut field_output = Output::new();
                     field_output.symbol(index.to_string());
                     field_output.symbol(":");
                     field_output.whitespace();
@@ -89,7 +89,7 @@ pub(crate) fn format_struct_children(
                     if let Some(item) = krate.index.get(item_id) {
                         // Only include functions (methods)
                         if let ItemEnum::Function(func) = &item.inner {
-                            let mut name_output = crate::fmt::Output::new();
+                            let mut name_output = Output::new();
                             name_output.function(item.name.as_deref().unwrap_or("unknown"));
                             let method_output = context.render_function(
                                 name_output,

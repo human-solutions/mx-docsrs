@@ -1,25 +1,19 @@
 mod cli;
 mod color;
-pub mod colorizer;
 mod crate_spec;
 mod doc;
 mod docfetch;
-mod ext;
-mod fmt;
 mod list;
-mod proc;
 mod util;
 mod version_resolver;
 
 use clap::Parser;
 use cli::Cli;
 use docfetch::{clear_cache, fetch_docs, load_local_docs};
+use jsondoc::JsonDoc;
 use version_resolver::VersionResolver;
 
-use crate::{
-    list::{ListItem, list_items},
-    proc::ItemProcessor,
-};
+use crate::list::{ListItem, list_items};
 
 /// Run the CLI with the given arguments and return the output as a string.
 ///
@@ -121,21 +115,21 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
         }
     };
 
-    let item_processor = ItemProcessor::process(&krate);
+    let doc = JsonDoc::from(krate);
 
     // Determine the output based on path and filter
     let result = match (path_prefix.as_deref(), filter.as_deref()) {
         // Pure navigation: show doc for exact path
         (Some(prefix), None) => {
             let full_path = format!("{}::{}", crate_spec.name, prefix);
-            let id = item_processor
+            let id = doc
                 .find_item_by_path(&full_path)
                 .ok_or_else(|| anyhow::anyhow!("No item found at {}", full_path))?;
-            doc::signature_for_id(&krate, &item_processor, &id)?
+            doc::signature_for_id(&doc, &id)?
         }
         // Search mode: filter items and show list or single doc
         (path_prefix, Some(filter)) => {
-            let mut list = list_items(&item_processor);
+            let mut list = list_items(&doc);
 
             // Filter by path prefix if provided
             if let Some(prefix) = path_prefix {
@@ -148,9 +142,9 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
             list.sort_by(|item1, item2| item1.path.cmp(&item2.path));
 
             if list.len() == 1 {
-                doc::signature_for_id(&krate, &item_processor, &list[0].id)?
+                doc::signature_for_id(&doc, &list[0].id)?
             } else {
-                let colorizer = colorizer::Colorizer::get();
+                let colorizer = rustdoc_fmt::Colorizer::get();
                 list.iter()
                     .map(|entry| colorizer.tokens(&entry.as_output().into_tokens()))
                     .collect::<Vec<String>>()
@@ -159,8 +153,8 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
         }
         // No path, no filter: show crate root doc
         (None, None) => {
-            let id = item_processor.crate_root_id();
-            doc::signature_for_id(&krate, &item_processor, &id)?
+            let id = doc.crate_root_id();
+            doc::signature_for_id(&doc, &id)?
         }
     };
 
@@ -175,7 +169,7 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
 
 /// Filter items by path prefix.
 /// Keeps items where path starts with `{crate_name}::{prefix}` (matching all descendants).
-fn filter_by_path_prefix<'c>(list: &mut Vec<ListItem<'c>>, crate_name: &str, prefix: &str) {
+fn filter_by_path_prefix(list: &mut Vec<ListItem>, crate_name: &str, prefix: &str) {
     let full_prefix = format!("{crate_name}::{prefix}");
     list.retain(|item| {
         // Match exact prefix or prefix followed by ::
@@ -183,7 +177,7 @@ fn filter_by_path_prefix<'c>(list: &mut Vec<ListItem<'c>>, crate_name: &str, pre
     });
 }
 
-fn filter_list<'c>(list: &mut Vec<ListItem<'c>>, filter: &str) {
+fn filter_list(list: &mut Vec<ListItem>, filter: &str) {
     // First try exact suffix match
     let matching_end: Vec<_> = list
         .iter()

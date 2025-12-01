@@ -1,19 +1,18 @@
 use rustdoc_types::{Id, Item};
 
-use crate::proc::path_component::PathComponent;
+use crate::path_component::PathComponent;
 
-/// This struct represents one public item of a crate, but in intermediate form.
+/// This struct represents one public item of a crate.
 /// Conceptually it wraps a single [`Item`] even though the path to the item
-/// consists of many [`Item`]s. Later, one [`Self`] will be converted to exactly
-/// one [`PublicItem`].
+/// consists of many [`Item`]s.
 #[derive(Clone, Debug)]
-pub struct IntermediatePublicItem<'c> {
+pub struct JsonDocItem<'c> {
     path: Vec<PathComponent<'c>>,
     parent_id: Option<Id>,
     id: Id,
 }
 
-impl<'c> IntermediatePublicItem<'c> {
+impl<'c> JsonDocItem<'c> {
     pub fn new(path: Vec<PathComponent<'c>>, parent_id: Option<Id>, id: Id) -> Self {
         Self {
             path,

@@ -1,13 +1,13 @@
 use anyhow::Result;
+use rustdoc_fmt::{Colorizer, format_markdown};
 use rustdoc_types::{Crate, ItemEnum};
 
 use super::children::{
     format_enum_children, format_module_children, format_struct_children, format_trait_children,
 };
-use super::markdown_formatter::format_markdown;
+use super::link_resolver::RustdocLinkResolver;
 use super::public_item::PublicItem;
 use super::render::RenderingContext;
-use crate::colorizer::Colorizer;
 
 /// Format documentation for a single PublicItem
 pub fn format_doc(krate: &Crate, item: &PublicItem, context: &RenderingContext) -> Result<String> {
@@ -24,8 +24,12 @@ pub fn format_doc(krate: &Crate, item: &PublicItem, context: &RenderingContext) 
     if let Some(full_item) = krate.index.get(&item._id) {
         if let Some(docs) = &full_item.docs {
             output.push('\n');
-            let formatted_docs =
-                format_markdown(docs, &full_item.links, krate, &context.id_to_items);
+            let resolver = RustdocLinkResolver {
+                item_links: &full_item.links,
+                krate,
+                id_to_items: &context.id_to_items,
+            };
+            let formatted_docs = format_markdown(docs, &resolver);
             output.push_str(&formatted_docs);
             output.push('\n');
         }

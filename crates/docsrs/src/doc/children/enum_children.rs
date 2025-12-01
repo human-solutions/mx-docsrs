@@ -1,8 +1,8 @@
 use anyhow::Result;
+use jsondoc::ImplKind;
+use rustdoc_fmt::{Colorizer, Output};
 use rustdoc_types::{Crate, ItemEnum, Variant};
 
-use crate::colorizer::Colorizer;
-use crate::doc::impl_kind::ImplKind;
 use crate::doc::render::RenderingContext;
 
 /// Format child items for an enum (variants, methods and trait implementations)
@@ -50,7 +50,7 @@ pub(crate) fn format_enum_children(
                     if let Some(item) = krate.index.get(item_id) {
                         // Only include functions (methods)
                         if let ItemEnum::Function(func) = &item.inner {
-                            let mut name_output = crate::fmt::Output::new();
+                            let mut name_output = Output::new();
                             name_output.function(item.name.as_deref().unwrap_or("unknown"));
                             let method_output = context.render_function(
                                 name_output,
@@ -110,7 +110,7 @@ fn format_variant(
     colorizer: &Colorizer,
     context: &RenderingContext,
 ) -> String {
-    let mut variant_output = crate::fmt::Output::new();
+    let mut variant_output = Output::new();
     variant_output.function(name.unwrap_or("unknown"));
 
     // Handle different variant kinds

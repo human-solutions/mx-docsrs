@@ -1,11 +1,10 @@
+use jsondoc::JsonDocItem;
+use rustdoc_fmt::{Token, tokens_to_string};
 use rustdoc_types::Id;
 use std::fmt::Display;
 use std::hash::Hash;
 
 use crate::doc::render::RenderingContext;
-use crate::fmt::Token;
-use crate::fmt::tokens_to_string;
-use crate::proc::IntermediatePublicItem;
 
 /// Represent a public item of an analyzed crate, i.e. an item that forms part
 /// of the public API of a crate.
@@ -22,14 +21,14 @@ pub struct PublicItem {
 }
 
 impl PublicItem {
-    pub(crate) fn from_intermediate_public_item(
+    pub(crate) fn from_jsondoc_item(
         context: &RenderingContext,
-        public_item: &IntermediatePublicItem<'_>,
+        item: &JsonDocItem<'_>,
     ) -> PublicItem {
         PublicItem {
-            tokens: context.token_stream(public_item).into_tokens(),
-            _parent_id: public_item.parent_id(),
-            _id: public_item.id(),
+            tokens: context.token_stream(item).into_tokens(),
+            _parent_id: item.parent_id(),
+            _id: item.id(),
         }
     }
 }
