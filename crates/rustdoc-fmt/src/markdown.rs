@@ -145,8 +145,13 @@ impl<'a, R: LinkResolver> MarkdownFormatter<'a, R> {
             Event::End(TagEnd::Emphasis) => {
                 let text = std::mem::take(&mut self.emphasis_text);
                 let styled = self.colorizer.emphasis(&text);
+                // Push to the appropriate outer context
                 if self.in_link {
                     self.link_text.push_str(&styled);
+                } else if self.in_strong {
+                    self.strong_text.push_str(&styled);
+                } else if self.in_heading {
+                    self.heading_text.push_str(&styled);
                 } else {
                     self.push_text(&styled);
                 }
@@ -161,8 +166,13 @@ impl<'a, R: LinkResolver> MarkdownFormatter<'a, R> {
             Event::End(TagEnd::Strong) => {
                 let text = std::mem::take(&mut self.strong_text);
                 let styled = self.colorizer.strong(&text);
+                // Push to the appropriate outer context
                 if self.in_link {
                     self.link_text.push_str(&styled);
+                } else if self.in_emphasis {
+                    self.emphasis_text.push_str(&styled);
+                } else if self.in_heading {
+                    self.heading_text.push_str(&styled);
                 } else {
                     self.push_text(&styled);
                 }
