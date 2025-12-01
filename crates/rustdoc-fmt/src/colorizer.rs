@@ -301,12 +301,18 @@ impl Colorizer {
             if c == '<' {
                 // Find closing >
                 let start = i;
+                let mut found_close = false;
                 for (j, c2) in chars.by_ref() {
                     if c2 == '>' {
                         // Dim the entire tag
                         result.push_str(&html[start..=j].dimmed().to_string());
+                        found_close = true;
                         break;
                     }
+                }
+                // If no closing >, output the rest as-is
+                if !found_close {
+                    result.push_str(&html[start..]);
                 }
             } else {
                 result.push(c);
