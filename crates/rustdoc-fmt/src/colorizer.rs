@@ -233,8 +233,9 @@ impl Colorizer {
             }
         };
 
-        // Add padding spaces around text for visual effect
-        let padded = format!(" {} ", text);
+        // Add # prefix based on level, with padding
+        let prefix = "#".repeat(level as usize);
+        let padded = format!(" {} {} ", prefix, text);
         padded
             .bold()
             .truecolor(fg_r, fg_g, fg_b)
