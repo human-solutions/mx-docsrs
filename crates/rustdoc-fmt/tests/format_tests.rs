@@ -426,7 +426,7 @@ This is **bold with *nested italic* inside**.
 
     This is bold and italic text.
 
-    This is nested italicbold with  inside.
+    This is bold with nested italic inside.
     ");
 }
 
