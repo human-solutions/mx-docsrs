@@ -403,13 +403,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "docsrs"
+version = "0.1.0"
+dependencies = [
+ "docsrs-core",
+ "docsrs-mcp",
+ "rmcp",
+ "tokio",
+]
+
+[[package]]
+name = "docsrs-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cargo_metadata",
+ "clap",
+ "colored",
+ "directories",
+ "insta",
+ "jsondoc",
+ "rustdoc-fmt",
+ "rustdoc-types",
+ "serde_json",
+ "ureq",
+ "zstd",
+]
+
+[[package]]
 name = "docsrs-mcp"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "colored",
+ "docsrs-core",
  "insta",
- "mx-docsrs",
  "rmcp",
  "schemars",
  "serde",
@@ -781,24 +809,6 @@ dependencies = [
  "libc",
  "wasi",
  "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "mx-docsrs"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "cargo_metadata",
- "clap",
- "colored",
- "directories",
- "insta",
- "jsondoc",
- "rustdoc-fmt",
- "rustdoc-types",
- "serde_json",
- "ureq",
- "zstd",
 ]
 
 [[package]]

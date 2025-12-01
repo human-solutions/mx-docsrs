@@ -49,9 +49,9 @@ impl DocsRsServer {
 
         let result = tokio::task::spawn_blocking(move || {
             if let Some(filter) = filter {
-                mx_docsrs::run_cli(&[&crate_spec, &filter])
+                docsrs_core::run_cli(&[&crate_spec, &filter])
             } else {
-                mx_docsrs::run_cli(&[&crate_spec])
+                docsrs_core::run_cli(&[&crate_spec])
             }
         })
         .await

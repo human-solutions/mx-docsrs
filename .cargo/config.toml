@@ -1,2 +1,2 @@
 [alias]
-docsrs = "run -q -p mx-docsrs --"
+docsrs = "run -q -p docsrs --"
