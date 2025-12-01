@@ -283,6 +283,14 @@ impl<'a, R: LinkResolver> MarkdownFormatter<'a, R> {
             Event::Start(Tag::Strikethrough) => {}
             Event::End(TagEnd::Strikethrough) => {}
 
+            // HTML - pass through with dimmed tags
+            Event::Html(html) => {
+                self.push_text(&self.colorizer.format_html(&html));
+            }
+            Event::InlineHtml(html) => {
+                self.push_text(&self.colorizer.format_html(&html));
+            }
+
             // Ignore other events
             _ => {}
         }

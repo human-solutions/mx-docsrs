@@ -50,6 +50,12 @@ A nested list:
 > This is a blockquote.
 > It can span multiple lines.
 
+HTML content with <b>bold</b> and <em>emphasis</em> tags:
+
+<div class="warning">
+This is a warning box with <code>inline code</code>.
+</div>
+
 Another code block in a different language:
 
 ```json

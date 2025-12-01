@@ -288,6 +288,33 @@ impl Colorizer {
         }
     }
 
+    /// Style HTML content - dim tags, normal text.
+    pub fn format_html(&self, html: &str) -> String {
+        if !Self::is_enabled() {
+            return html.to_string();
+        }
+
+        let mut result = String::new();
+        let mut chars = html.char_indices().peekable();
+
+        while let Some((i, c)) = chars.next() {
+            if c == '<' {
+                // Find closing >
+                let start = i;
+                for (j, c2) in chars.by_ref() {
+                    if c2 == '>' {
+                        // Dim the entire tag
+                        result.push_str(&html[start..=j].dimmed().to_string());
+                        break;
+                    }
+                }
+            } else {
+                result.push(c);
+            }
+        }
+        result
+    }
+
     // ========== Syntax Highlighting ==========
 
     /// Highlight a code block for terminal output.
