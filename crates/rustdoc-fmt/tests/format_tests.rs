@@ -29,9 +29,9 @@ fn main() {
     insta::assert_snapshot!(result, @r#"
     Simple Rust code block:
 
-        fn main() {
-            println!("Hello, world!");
-        }
+      fn main() {
+          println!("Hello, world!");
+      }
     "#);
 }
 
@@ -50,8 +50,8 @@ println!("{}", x);
     insta::assert_snapshot!(result, @r#"
     Example with hidden lines:
 
-        let x = 42;
-        println!("{}", x);
+      let x = 42;
+      println!("{}", x);
     "#);
 }
 
@@ -81,12 +81,12 @@ let x: i32 = "not a number";
     insta::assert_snapshot!(result, @r#"
     Different code block attributes:
 
-        fn expensive_operation() {
-            // This won't be run during doc tests
-        }
-        broken_code(
-        panic!("expected panic");
-        let x: i32 = "not a number";
+      fn expensive_operation() {
+          // This won't be run during doc tests
+      }
+      broken_code(
+      panic!("expected panic");
+      let x: i32 = "not a number";
     "#);
 }
 
@@ -116,12 +116,12 @@ Plain text without language tag
     insta::assert_snapshot!(result, @r#"
     Non-Rust code blocks:
 
-        {"key": "value", "number": 42}
-        cargo build --release
-        [package]
-        name = "example"
-        version = "0.1.0"
-        Plain text without language tag
+      {"key": "value", "number": 42}
+      cargo build --release
+      [package]
+      name = "example"
+      version = "0.1.0"
+      Plain text without language tag
     "#);
 }
 
@@ -492,7 +492,7 @@ See [`Config`] for more details.
 
     Use the `example` function:
 
-        let result = example(42);
+      let result = example(42);
     Options
 
       • Use `--verbose` for verbose output
@@ -532,14 +532,14 @@ assert!(f64::NAN.signum().is_nan());
       • `-1.0` if the number is negative, `-0.0` or `Float::neg_infinity()`
       • `Float::nan()` if the number is `Float::nan()`
 
-        use num_traits::Float;
-        use std::f64;
-        
-        let f = 3.5;
-        
-        assert_eq!(f.signum(), 1.0);
-        assert_eq!(f64::NEG_INFINITY.signum(), -1.0);
-        
-        assert!(f64::NAN.signum().is_nan());
+      use num_traits::Float;
+      use std::f64;
+      
+      let f = 3.5;
+      
+      assert_eq!(f.signum(), 1.0);
+      assert_eq!(f64::NEG_INFINITY.signum(), -1.0);
+      
+      assert!(f64::NAN.signum().is_nan());
     ");
 }

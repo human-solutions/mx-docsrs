@@ -332,7 +332,7 @@ impl Colorizer {
         for line in LinesWithEndings::from(&processed_code) {
             match highlighter.highlight_line(line, &SYNTAX_SET) {
                 Ok(ranges) => {
-                    output.push_str("    "); // 4-space indent
+                    output.push_str("  "); // 2-space indent
                     let escaped = as_24_bit_terminal_escaped(&ranges[..], false);
                     output.push_str(&escaped);
                     // Ensure line ends with newline
@@ -342,7 +342,7 @@ impl Colorizer {
                 }
                 Err(_) => {
                     // Fallback on error
-                    output.push_str("    ");
+                    output.push_str("  ");
                     output.push_str(line);
                     if !line.ends_with('\n') {
                         output.push('\n');
@@ -368,7 +368,7 @@ impl Colorizer {
 fn format_plain(code: &str) -> String {
     let mut output = String::new();
     for line in code.lines() {
-        output.push_str("    ");
+        output.push_str("  ");
         output.push_str(line);
         output.push('\n');
     }
@@ -481,7 +481,7 @@ mod tests {
     fn test_format_plain() {
         let code = "let x = 1;\nlet y = 2;";
         let result = format_plain(code);
-        assert_eq!(result, "    let x = 1;\n    let y = 2;\n");
+        assert_eq!(result, "  let x = 1;\n  let y = 2;\n");
     }
 
     #[test]
@@ -505,7 +505,7 @@ mod tests {
         let colorizer = Colorizer::get();
         let code = "fn main() {}";
         let result = colorizer.code_block(code, "rust");
-        assert_eq!(result, "    fn main() {}\n");
+        assert_eq!(result, "  fn main() {}\n");
         colored::control::unset_override();
     }
 

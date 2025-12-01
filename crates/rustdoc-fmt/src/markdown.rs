@@ -359,7 +359,7 @@ mod tests {
     #[test]
     fn test_code_block() {
         let result = format_test("```\nlet x = 1;\n```");
-        assert_eq!(result, "    let x = 1;");
+        assert_eq!(result, "  let x = 1;");
     }
 
     #[test]
