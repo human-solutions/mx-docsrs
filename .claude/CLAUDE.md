@@ -1,3 +1,4 @@
 - when adding dependencies, search online to make sure the latest one is used
 - After changing the code always run cargo fmt, clippy and test
 - Always run tests with `cargo nextest run`. It runs a setup script with test data generation.
+- When a insta snapshot is less then 20 lines, then it should be inlined
