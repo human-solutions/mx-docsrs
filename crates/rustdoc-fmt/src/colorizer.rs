@@ -125,6 +125,7 @@ impl ColorScheme {
 pub struct Colorizer {
     scheme: ColorScheme,
     theme_name: &'static str,
+    is_dark: bool,
 }
 
 impl Colorizer {
@@ -133,19 +134,23 @@ impl Colorizer {
         // Detect terminal theme (dark/light)
         // Skip terminal detection in test environments to avoid hangs with cargo-nextest
         // See: https://github.com/bash/terminal-colorsaurus/issues/38
-        let theme_name = if Self::is_test_environment() {
-            "base16-eighties.dark"
+        let (theme_name, is_dark) = if Self::is_test_environment() {
+            ("base16-eighties.dark", true)
         } else {
             match theme_mode(QueryOptions::default()) {
-                Ok(ThemeMode::Light) => "InspiredGitHub",
-                Ok(ThemeMode::Dark) | Err(_) => "base16-eighties.dark",
+                Ok(ThemeMode::Light) => ("InspiredGitHub", false),
+                Ok(ThemeMode::Dark) | Err(_) => ("base16-eighties.dark", true),
             }
         };
 
         let theme = &THEME_SET.themes[theme_name];
         let scheme = ColorScheme::from_theme(theme);
 
-        Self { scheme, theme_name }
+        Self {
+            scheme,
+            theme_name,
+            is_dark,
+        }
     }
 
     /// Check if we're running in a test environment where terminal queries may hang.
@@ -198,13 +203,43 @@ impl Colorizer {
 
     // ========== Markdown Styling ==========
 
-    /// Style text as a heading (bold).
-    pub fn heading(&self, text: &str) -> String {
-        if Self::is_enabled() {
-            text.bold().to_string()
-        } else {
-            text.to_string()
+    /// Style text as a heading with inverse background based on level.
+    ///
+    /// Uses graduated intensity - h1 has strongest contrast, h4 most subtle.
+    /// - Dark theme: light-gray background + black foreground
+    /// - Light theme: dark-gray background + white foreground
+    pub fn heading(&self, text: &str, level: u32) -> String {
+        if !Self::is_enabled() {
+            return text.to_string();
         }
+
+        // Get background gray level based on heading level (1-4)
+        // Higher level = less contrast
+        let (bg_r, bg_g, bg_b, fg_r, fg_g, fg_b) = if self.is_dark {
+            // Dark theme: light backgrounds with black text
+            match level {
+                1 => (220, 220, 220, 0, 0, 0), // h1: very light gray
+                2 => (180, 180, 180, 0, 0, 0), // h2: light gray
+                3 => (140, 140, 140, 0, 0, 0), // h3: medium gray
+                _ => (100, 100, 100, 0, 0, 0), // h4+: darker gray
+            }
+        } else {
+            // Light theme: dark backgrounds with white text
+            match level {
+                1 => (50, 50, 50, 255, 255, 255),    // h1: very dark gray
+                2 => (80, 80, 80, 255, 255, 255),    // h2: dark gray
+                3 => (110, 110, 110, 255, 255, 255), // h3: medium gray
+                _ => (140, 140, 140, 255, 255, 255), // h4+: lighter gray
+            }
+        };
+
+        // Add padding spaces around text for visual effect
+        let padded = format!(" {} ", text);
+        padded
+            .bold()
+            .truecolor(fg_r, fg_g, fg_b)
+            .on_truecolor(bg_r, bg_g, bg_b)
+            .to_string()
     }
 
     /// Style text as emphasis (italic).

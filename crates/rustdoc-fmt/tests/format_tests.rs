@@ -179,11 +179,11 @@ fn list_nested_basic() {
     insta::assert_snapshot!(result, @r"
     Nested list:
 
-      • Level 1 item  • Level 2 item  • Level 3 item
+      • Level 1 item
+        ◦ Level 2 item
+          ▪ Level 3 item
 
-
-      • Another level 2
-
+        ◦ Another level 2
 
       • Back to level 1
     ");
@@ -209,9 +209,10 @@ fn list_nested_real_async_std() {
 
       • On Windows, a path has a root if it:
 
-      • has no prefix and begins with a separator, e.g. `\windows`
-      • has a prefix followed by a separator, e.g. `c:\windows` but not `c:windows`
-      • has any non-disk prefix, e.g. `\\server\share`
+
+        ◦ has no prefix and begins with a separator, e.g. `\windows`
+        ◦ has a prefix followed by a separator, e.g. `c:\windows` but not `c:windows`
+        ◦ has any non-disk prefix, e.g. `\\server\share`
     ");
 }
 
@@ -495,8 +496,8 @@ See [`Config`] for more details.
     Options
 
       • Use `--verbose` for verbose output
-      • Use `--quiet` for quiet mode  • Also silences warnings
-
+      • Use `--quiet` for quiet mode
+        ◦ Also silences warnings
 
 
     See [`Config`] for more details.

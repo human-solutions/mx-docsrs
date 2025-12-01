@@ -43,15 +43,15 @@ struct MarkdownFormatter<'a, R: LinkResolver> {
     code_block_content: String,
     in_heading: bool,
     heading_text: String,
+    heading_level: u32,
     in_emphasis: bool,
     emphasis_text: String,
     in_strong: bool,
     strong_text: String,
     in_block_quote: bool,
     block_quote_text: String,
-    in_list: bool,
-    list_ordered: bool,
-    list_index: u64,
+    list_depth: usize,
+    list_stack: Vec<(bool, u64)>, // (is_ordered, current_index)
 }
 
 impl<'a, R: LinkResolver> MarkdownFormatter<'a, R> {
@@ -68,15 +68,15 @@ impl<'a, R: LinkResolver> MarkdownFormatter<'a, R> {
             code_block_content: String::new(),
             in_heading: false,
             heading_text: String::new(),
+            heading_level: 1,
             in_emphasis: false,
             emphasis_text: String::new(),
             in_strong: false,
             strong_text: String::new(),
             in_block_quote: false,
             block_quote_text: String::new(),
-            in_list: false,
-            list_ordered: false,
-            list_index: 1,
+            list_depth: 0,
+            list_stack: Vec::new(),
         }
     }
 
@@ -97,13 +97,15 @@ impl<'a, R: LinkResolver> MarkdownFormatter<'a, R> {
             }
 
             // Headings
-            Event::Start(Tag::Heading { .. }) => {
+            Event::Start(Tag::Heading { level, .. }) => {
                 self.in_heading = true;
                 self.heading_text.clear();
+                self.heading_level = level as u32;
             }
             Event::End(TagEnd::Heading(_)) => {
                 let text = std::mem::take(&mut self.heading_text);
-                self.output.push_str(&self.colorizer.heading(&text));
+                self.output
+                    .push_str(&self.colorizer.heading(&text, self.heading_level));
                 self.output.push_str("\n\n");
                 self.in_heading = false;
             }
@@ -169,20 +171,37 @@ impl<'a, R: LinkResolver> MarkdownFormatter<'a, R> {
 
             // Lists
             Event::Start(Tag::List(first_index)) => {
-                self.in_list = true;
-                self.list_ordered = first_index.is_some();
-                self.list_index = first_index.unwrap_or(1);
+                // If we're already in a list, add newline before nested list
+                if self.list_depth > 0 {
+                    self.output.push('\n');
+                }
+                self.list_depth += 1;
+                let is_ordered = first_index.is_some();
+                let start_index = first_index.unwrap_or(1);
+                self.list_stack.push((is_ordered, start_index));
             }
             Event::End(TagEnd::List(_)) => {
-                self.in_list = false;
-                self.output.push('\n');
+                self.list_stack.pop();
+                self.list_depth = self.list_depth.saturating_sub(1);
+                if self.list_depth == 0 {
+                    self.output.push('\n');
+                }
             }
             Event::Start(Tag::Item) => {
-                if self.list_ordered {
-                    self.output.push_str(&format!("  {}. ", self.list_index));
-                    self.list_index += 1;
-                } else {
-                    self.output.push_str("  • ");
+                // Indent based on nesting depth (2 spaces per level)
+                let indent = "  ".repeat(self.list_depth);
+                if let Some((is_ordered, index)) = self.list_stack.last_mut() {
+                    if *is_ordered {
+                        self.output.push_str(&format!("{}{}. ", indent, index));
+                        *index += 1;
+                    } else {
+                        // Classic alternating bullets: • ◦ ▪ ▫
+                        const BULLETS: [char; 4] = ['•', '◦', '▪', '▫'];
+                        let bullet = BULLETS
+                            .get(self.list_depth.saturating_sub(1))
+                            .unwrap_or(&'▫');
+                        self.output.push_str(&format!("{}{} ", indent, bullet));
+                    }
                 }
             }
             Event::End(TagEnd::Item) => {

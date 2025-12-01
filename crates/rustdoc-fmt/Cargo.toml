@@ -11,3 +11,7 @@ pulldown-cmark.workspace = true
 
 [dev-dependencies]
 insta.workspace = true
+
+[[bin]]
+name = "rustdoc-fmt-demo"
+path = "src/main.rs"
