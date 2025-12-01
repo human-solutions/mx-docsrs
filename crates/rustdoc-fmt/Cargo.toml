@@ -8,3 +8,10 @@ colored.workspace = true
 syntect.workspace = true
 terminal-colorsaurus.workspace = true
 pulldown-cmark.workspace = true
+
+[dev-dependencies]
+insta.workspace = true
+
+[[bin]]
+name = "rustdoc-fmt-demo"
+path = "src/main.rs"

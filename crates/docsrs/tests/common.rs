@@ -1,4 +1,7 @@
 pub fn run_cli(args: &[&str]) -> (String, String, bool) {
+    // Disable colors for consistent test output
+    colored::control::set_override(false);
+
     match mx_docsrs::run_cli(args) {
         Ok(stdout) => (normalize_output(&stdout), String::new(), true),
         Err(stderr) => (String::new(), stderr, false),

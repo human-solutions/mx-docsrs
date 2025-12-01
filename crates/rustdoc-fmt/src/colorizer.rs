@@ -125,21 +125,39 @@ impl ColorScheme {
 pub struct Colorizer {
     scheme: ColorScheme,
     theme_name: &'static str,
+    is_dark: bool,
 }
 
 impl Colorizer {
     /// Create a new colorizer, detecting theme from terminal.
     fn new() -> Self {
         // Detect terminal theme (dark/light)
-        let theme_name = match theme_mode(QueryOptions::default()) {
-            Ok(ThemeMode::Light) => "InspiredGitHub",
-            Ok(ThemeMode::Dark) | Err(_) => "base16-eighties.dark",
+        // Skip terminal detection in test environments to avoid hangs with cargo-nextest
+        // See: https://github.com/bash/terminal-colorsaurus/issues/38
+        let (theme_name, is_dark) = if Self::is_test_environment() {
+            ("base16-eighties.dark", true)
+        } else {
+            match theme_mode(QueryOptions::default()) {
+                Ok(ThemeMode::Light) => ("InspiredGitHub", false),
+                Ok(ThemeMode::Dark) | Err(_) => ("base16-eighties.dark", true),
+            }
         };
 
         let theme = &THEME_SET.themes[theme_name];
         let scheme = ColorScheme::from_theme(theme);
 
-        Self { scheme, theme_name }
+        Self {
+            scheme,
+            theme_name,
+            is_dark,
+        }
+    }
+
+    /// Check if we're running in a test environment where terminal queries may hang.
+    fn is_test_environment() -> bool {
+        // NEXTEST is set by cargo-nextest
+        // RUST_TEST_THREADS is set by cargo test
+        std::env::var("NEXTEST").is_ok() || std::env::var("RUST_TEST_THREADS").is_ok()
     }
 
     /// Get the global colorizer instance.
@@ -185,13 +203,44 @@ impl Colorizer {
 
     // ========== Markdown Styling ==========
 
-    /// Style text as a heading (bold).
-    pub fn heading(&self, text: &str) -> String {
-        if Self::is_enabled() {
-            text.bold().to_string()
-        } else {
-            text.to_string()
+    /// Style text as a heading with inverse background based on level.
+    ///
+    /// Uses graduated intensity - h1 has strongest contrast, h4 most subtle.
+    /// - Dark theme: light-gray background + black foreground
+    /// - Light theme: dark-gray background + white foreground
+    pub fn heading(&self, text: &str, level: u32) -> String {
+        if !Self::is_enabled() {
+            return text.to_string();
         }
+
+        // Get background gray level based on heading level (1-4)
+        // Higher level = less contrast
+        let (bg_r, bg_g, bg_b, fg_r, fg_g, fg_b) = if self.is_dark {
+            // Dark theme: light backgrounds with black text
+            match level {
+                1 => (220, 220, 220, 0, 0, 0), // h1: very light gray
+                2 => (180, 180, 180, 0, 0, 0), // h2: light gray
+                3 => (140, 140, 140, 0, 0, 0), // h3: medium gray
+                _ => (100, 100, 100, 0, 0, 0), // h4+: darker gray
+            }
+        } else {
+            // Light theme: dark backgrounds with white text
+            match level {
+                1 => (50, 50, 50, 255, 255, 255),    // h1: very dark gray
+                2 => (80, 80, 80, 255, 255, 255),    // h2: dark gray
+                3 => (110, 110, 110, 255, 255, 255), // h3: medium gray
+                _ => (140, 140, 140, 255, 255, 255), // h4+: lighter gray
+            }
+        };
+
+        // Add # prefix based on level, with padding
+        let prefix = "#".repeat(level as usize);
+        let padded = format!(" {} {} ", prefix, text);
+        padded
+            .bold()
+            .truecolor(fg_r, fg_g, fg_b)
+            .on_truecolor(bg_r, bg_g, bg_b)
+            .to_string()
     }
 
     /// Style text as emphasis (italic).
@@ -239,6 +288,39 @@ impl Colorizer {
         }
     }
 
+    /// Style HTML content - dim tags, normal text.
+    pub fn format_html(&self, html: &str) -> String {
+        if !Self::is_enabled() {
+            return html.to_string();
+        }
+
+        let mut result = String::new();
+        let mut chars = html.char_indices().peekable();
+
+        while let Some((i, c)) = chars.next() {
+            if c == '<' {
+                // Find closing >
+                let start = i;
+                let mut found_close = false;
+                for (j, c2) in chars.by_ref() {
+                    if c2 == '>' {
+                        // Dim the entire tag
+                        result.push_str(&html[start..=j].dimmed().to_string());
+                        found_close = true;
+                        break;
+                    }
+                }
+                // If no closing >, output the rest as-is
+                if !found_close {
+                    result.push_str(&html[start..]);
+                }
+            } else {
+                result.push(c);
+            }
+        }
+        result
+    }
+
     // ========== Syntax Highlighting ==========
 
     /// Highlight a code block for terminal output.
@@ -283,7 +365,7 @@ impl Colorizer {
         for line in LinesWithEndings::from(&processed_code) {
             match highlighter.highlight_line(line, &SYNTAX_SET) {
                 Ok(ranges) => {
-                    output.push_str("    "); // 4-space indent
+                    output.push_str("  "); // 2-space indent
                     let escaped = as_24_bit_terminal_escaped(&ranges[..], false);
                     output.push_str(&escaped);
                     // Ensure line ends with newline
@@ -293,7 +375,7 @@ impl Colorizer {
                 }
                 Err(_) => {
                     // Fallback on error
-                    output.push_str("    ");
+                    output.push_str("  ");
                     output.push_str(line);
                     if !line.ends_with('\n') {
                         output.push('\n');
@@ -319,7 +401,7 @@ impl Colorizer {
 fn format_plain(code: &str) -> String {
     let mut output = String::new();
     for line in code.lines() {
-        output.push_str("    ");
+        output.push_str("  ");
         output.push_str(line);
         output.push('\n');
     }
@@ -432,7 +514,7 @@ mod tests {
     fn test_format_plain() {
         let code = "let x = 1;\nlet y = 2;";
         let result = format_plain(code);
-        assert_eq!(result, "    let x = 1;\n    let y = 2;\n");
+        assert_eq!(result, "  let x = 1;\n  let y = 2;\n");
     }
 
     #[test]
@@ -456,7 +538,7 @@ mod tests {
         let colorizer = Colorizer::get();
         let code = "fn main() {}";
         let result = colorizer.code_block(code, "rust");
-        assert_eq!(result, "    fn main() {}\n");
+        assert_eq!(result, "  fn main() {}\n");
         colored::control::unset_override();
     }
 
