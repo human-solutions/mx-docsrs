@@ -37,9 +37,16 @@ impl DocsRsServer {
         }
     }
 
-    #[tool(
-        description = "Look up Rust documentation for a crate, module, or item. Without a filter, returns full documentation. With a filter, searches for matching items."
-    )]
+    #[tool(description = "Fetch Rust documentation from docs.rs.
+
+Single match: returns documentation and child items (modules, types, functions).
+Multiple matches: returns a list of matching items.
+
+Examples:
+- crate_spec: \"serde\" → crate docs + children (de, ser modules, etc.)
+- crate_spec: \"tokio::spawn\" → function docs
+- crate_spec: \"serde@1.0\" → pinned version
+- crate_spec: \"tokio\", filter: \"spawn\" → list items matching \"spawn\"")]
     async fn lookup_docs(
         &self,
         params: Parameters<LookupDocsParams>,
