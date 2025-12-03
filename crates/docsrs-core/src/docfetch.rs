@@ -36,10 +36,7 @@ pub fn build_local_docs(crate_name: &str, doc_path: &Path) -> Result<BuildLocalD
             let stderr = String::from_utf8_lossy(&output.stderr);
 
             // Check for missing nightly toolchain
-            if stderr.contains("toolchain 'nightly'")
-                || stderr.contains("no such command: `+nightly`")
-                || (stderr.contains("error") && stderr.contains("nightly"))
-            {
+            if is_nightly_missing(&stderr) {
                 bail!(
                     "Nightly toolchain required for local crate documentation.\n\
                      Install with: rustup toolchain install nightly"
@@ -67,6 +64,13 @@ pub fn build_local_docs(crate_name: &str, doc_path: &Path) -> Result<BuildLocalD
             bail!("Failed to run cargo: {}", e);
         }
     }
+}
+
+/// Check if stderr indicates missing nightly toolchain
+fn is_nightly_missing(stderr: &str) -> bool {
+    stderr.contains("toolchain 'nightly'")
+        || stderr.contains("no such command: `+nightly`")
+        || (stderr.contains("error") && stderr.contains("nightly"))
 }
 
 /// Extract a short summary from compilation errors
@@ -371,5 +375,87 @@ mod tests {
         // Attempt via embedded path separator
         let result = get_cache_path("foo/bar", "1.0.0");
         assert!(result.is_err());
+    }
+
+    // Tests for extract_error_summary
+
+    #[test]
+    fn test_extract_error_summary_with_error_code() {
+        let stderr = "error[E0432]: unresolved import `foo`";
+        assert_eq!(
+            extract_error_summary(stderr),
+            "error[E0432]: unresolved import `foo`"
+        );
+    }
+
+    #[test]
+    fn test_extract_error_summary_with_plain_error() {
+        let stderr = "error: could not compile `my-crate`";
+        assert_eq!(
+            extract_error_summary(stderr),
+            "error: could not compile `my-crate`"
+        );
+    }
+
+    #[test]
+    fn test_extract_error_summary_truncates_long() {
+        let long_error = format!("error[E0001]: {}", "x".repeat(100));
+        let result = extract_error_summary(&long_error);
+        assert_eq!(result.len(), 83); // 80 chars + "..."
+        assert!(result.ends_with("..."));
+    }
+
+    #[test]
+    fn test_extract_error_summary_no_error() {
+        let stderr = "warning: unused variable\nsome other output";
+        assert_eq!(extract_error_summary(stderr), "compilation error");
+    }
+
+    #[test]
+    fn test_extract_error_summary_multiline() {
+        let stderr = r#"
+   Compiling my-crate v0.1.0
+error[E0433]: failed to resolve: use of undeclared crate or module `foo`
+ --> src/lib.rs:1:5
+  |
+1 | use foo::bar;
+  |     ^^^ use of undeclared crate or module `foo`
+
+error: could not compile `my-crate` due to previous error
+"#;
+        // Should find the first error line
+        assert!(extract_error_summary(stderr).starts_with("error[E0433]"));
+    }
+
+    // Tests for is_nightly_missing
+
+    #[test]
+    fn test_is_nightly_missing_toolchain_not_installed() {
+        let stderr = "error: toolchain 'nightly' is not installed";
+        assert!(is_nightly_missing(stderr));
+    }
+
+    #[test]
+    fn test_is_nightly_missing_no_such_command() {
+        let stderr = "error: no such command: `+nightly`";
+        assert!(is_nightly_missing(stderr));
+    }
+
+    #[test]
+    fn test_is_nightly_missing_error_with_nightly() {
+        let stderr = "error: failed to run `rustup run nightly cargo`";
+        assert!(is_nightly_missing(stderr));
+    }
+
+    #[test]
+    fn test_is_nightly_missing_false_for_other_errors() {
+        let stderr = "error[E0432]: unresolved import `foo`";
+        assert!(!is_nightly_missing(stderr));
+    }
+
+    #[test]
+    fn test_is_nightly_missing_false_for_warnings() {
+        let stderr = "warning: unused variable";
+        assert!(!is_nightly_missing(stderr));
     }
 }
