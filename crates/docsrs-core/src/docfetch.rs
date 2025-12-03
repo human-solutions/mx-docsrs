@@ -4,6 +4,91 @@ use rustdoc_types::Crate;
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::process::Command;
+
+/// Result of building local documentation
+pub enum BuildLocalDocsResult {
+    /// Documentation was successfully built and loaded
+    Success(Crate),
+    /// Build failed but cached docs are available (includes warning message)
+    CachedWithWarning { krate: Crate, warning: String },
+}
+
+/// Build documentation for a local crate using cargo doc
+///
+/// Runs `cargo +nightly doc -p {crate_name} --no-deps` and loads the resulting JSON.
+/// If the build fails but cached docs exist, returns those with a warning.
+pub fn build_local_docs(crate_name: &str, doc_path: &Path) -> Result<BuildLocalDocsResult> {
+    // Run cargo +nightly doc
+    let output = Command::new("cargo")
+        .args(["+nightly", "doc", "-p", crate_name, "--no-deps"])
+        .env("RUSTDOCFLAGS", "-Z unstable-options --output-format=json")
+        .output();
+
+    match output {
+        Ok(output) if output.status.success() => {
+            // Build succeeded, load the docs
+            let krate = load_local_docs(doc_path)?;
+            Ok(BuildLocalDocsResult::Success(krate))
+        }
+        Ok(output) => {
+            // Build failed - check the error
+            let stderr = String::from_utf8_lossy(&output.stderr);
+
+            // Check for missing nightly toolchain
+            if is_nightly_missing(&stderr) {
+                bail!(
+                    "Nightly toolchain required for local crate documentation.\n\
+                     Install with: rustup toolchain install nightly"
+                );
+            }
+
+            // Compilation error - check if we have cached docs
+            if doc_path.exists() {
+                let krate = load_local_docs(doc_path)?;
+                let error_summary = extract_error_summary(&stderr);
+                Ok(BuildLocalDocsResult::CachedWithWarning {
+                    krate,
+                    warning: format!("Using cached docs (build failed: {})", error_summary),
+                })
+            } else {
+                // No cached docs, return the compilation error
+                bail!("Failed to build documentation:\n{}", stderr);
+            }
+        }
+        Err(e) => {
+            // Failed to run cargo at all
+            if e.kind() == std::io::ErrorKind::NotFound {
+                bail!("cargo not found. Please ensure Rust is installed.");
+            }
+            bail!("Failed to run cargo: {}", e);
+        }
+    }
+}
+
+/// Check if stderr indicates missing nightly toolchain
+fn is_nightly_missing(stderr: &str) -> bool {
+    stderr.contains("toolchain 'nightly'")
+        || stderr.contains("no such command: `+nightly`")
+        || (stderr.contains("error") && stderr.contains("nightly"))
+}
+
+/// Extract a short summary from compilation errors
+fn extract_error_summary(stderr: &str) -> String {
+    // Look for "error[E...]:" or "error:" lines
+    for line in stderr.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("error[E") || trimmed.starts_with("error:") {
+            // Return first ~80 chars
+            let summary: String = trimmed.chars().take(80).collect();
+            if trimmed.len() > 80 {
+                return format!("{}...", summary);
+            }
+            return summary;
+        }
+    }
+    "compilation error".to_string()
+}
 
 /// Load documentation from a local rustdoc JSON file
 pub fn load_local_docs(path: &Path) -> Result<Crate> {
@@ -290,5 +375,87 @@ mod tests {
         // Attempt via embedded path separator
         let result = get_cache_path("foo/bar", "1.0.0");
         assert!(result.is_err());
+    }
+
+    // Tests for extract_error_summary
+
+    #[test]
+    fn test_extract_error_summary_with_error_code() {
+        let stderr = "error[E0432]: unresolved import `foo`";
+        assert_eq!(
+            extract_error_summary(stderr),
+            "error[E0432]: unresolved import `foo`"
+        );
+    }
+
+    #[test]
+    fn test_extract_error_summary_with_plain_error() {
+        let stderr = "error: could not compile `my-crate`";
+        assert_eq!(
+            extract_error_summary(stderr),
+            "error: could not compile `my-crate`"
+        );
+    }
+
+    #[test]
+    fn test_extract_error_summary_truncates_long() {
+        let long_error = format!("error[E0001]: {}", "x".repeat(100));
+        let result = extract_error_summary(&long_error);
+        assert_eq!(result.len(), 83); // 80 chars + "..."
+        assert!(result.ends_with("..."));
+    }
+
+    #[test]
+    fn test_extract_error_summary_no_error() {
+        let stderr = "warning: unused variable\nsome other output";
+        assert_eq!(extract_error_summary(stderr), "compilation error");
+    }
+
+    #[test]
+    fn test_extract_error_summary_multiline() {
+        let stderr = r#"
+   Compiling my-crate v0.1.0
+error[E0433]: failed to resolve: use of undeclared crate or module `foo`
+ --> src/lib.rs:1:5
+  |
+1 | use foo::bar;
+  |     ^^^ use of undeclared crate or module `foo`
+
+error: could not compile `my-crate` due to previous error
+"#;
+        // Should find the first error line
+        assert!(extract_error_summary(stderr).starts_with("error[E0433]"));
+    }
+
+    // Tests for is_nightly_missing
+
+    #[test]
+    fn test_is_nightly_missing_toolchain_not_installed() {
+        let stderr = "error: toolchain 'nightly' is not installed";
+        assert!(is_nightly_missing(stderr));
+    }
+
+    #[test]
+    fn test_is_nightly_missing_no_such_command() {
+        let stderr = "error: no such command: `+nightly`";
+        assert!(is_nightly_missing(stderr));
+    }
+
+    #[test]
+    fn test_is_nightly_missing_error_with_nightly() {
+        let stderr = "error: failed to run `rustup run nightly cargo`";
+        assert!(is_nightly_missing(stderr));
+    }
+
+    #[test]
+    fn test_is_nightly_missing_false_for_other_errors() {
+        let stderr = "error[E0432]: unresolved import `foo`";
+        assert!(!is_nightly_missing(stderr));
+    }
+
+    #[test]
+    fn test_is_nightly_missing_false_for_warnings() {
+        let stderr = "warning: unused variable";
+        assert!(!is_nightly_missing(stderr));
     }
 }

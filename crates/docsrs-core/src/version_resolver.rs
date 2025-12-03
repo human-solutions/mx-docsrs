@@ -342,10 +342,11 @@ impl VersionResolver {
         })
     }
 
-    /// Get the path to the rustdoc JSON file for a local workspace crate
+    /// Get the expected path to the rustdoc JSON file for a local workspace crate
     ///
-    /// Returns None if the crate is not a workspace member or if the path doesn't exist
-    pub fn get_local_crate_doc_path(&self, crate_name: &str) -> Option<PathBuf> {
+    /// Returns the path where the doc file would be located, regardless of whether it exists.
+    /// Returns None if the crate is not a workspace member.
+    pub fn get_expected_doc_path(&self, crate_name: &str) -> Option<PathBuf> {
         // Normalize crate name: rustdoc generates JSON with underscores (e.g., test_visibility.json)
         let normalized = normalize_crate_name(crate_name);
 
@@ -360,11 +361,7 @@ impl VersionResolver {
             .join(format!("{}.json", normalized))
             .into();
 
-        if doc_path.exists() {
-            Some(doc_path)
-        } else {
-            None
-        }
+        Some(doc_path)
     }
 }
 
