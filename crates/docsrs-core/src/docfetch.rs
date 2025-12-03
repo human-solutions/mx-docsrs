@@ -4,6 +4,87 @@ use rustdoc_types::Crate;
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::process::Command;
+
+/// Result of building local documentation
+pub enum BuildLocalDocsResult {
+    /// Documentation was successfully built and loaded
+    Success(Crate),
+    /// Build failed but cached docs are available (includes warning message)
+    CachedWithWarning { krate: Crate, warning: String },
+}
+
+/// Build documentation for a local crate using cargo doc
+///
+/// Runs `cargo +nightly doc -p {crate_name} --no-deps` and loads the resulting JSON.
+/// If the build fails but cached docs exist, returns those with a warning.
+pub fn build_local_docs(crate_name: &str, doc_path: &Path) -> Result<BuildLocalDocsResult> {
+    // Run cargo +nightly doc
+    let output = Command::new("cargo")
+        .args(["+nightly", "doc", "-p", crate_name, "--no-deps"])
+        .env("RUSTDOCFLAGS", "-Z unstable-options --output-format=json")
+        .output();
+
+    match output {
+        Ok(output) if output.status.success() => {
+            // Build succeeded, load the docs
+            let krate = load_local_docs(doc_path)?;
+            Ok(BuildLocalDocsResult::Success(krate))
+        }
+        Ok(output) => {
+            // Build failed - check the error
+            let stderr = String::from_utf8_lossy(&output.stderr);
+
+            // Check for missing nightly toolchain
+            if stderr.contains("toolchain 'nightly'")
+                || stderr.contains("no such command: `+nightly`")
+                || (stderr.contains("error") && stderr.contains("nightly"))
+            {
+                bail!(
+                    "Nightly toolchain required for local crate documentation.\n\
+                     Install with: rustup toolchain install nightly"
+                );
+            }
+
+            // Compilation error - check if we have cached docs
+            if doc_path.exists() {
+                let krate = load_local_docs(doc_path)?;
+                let error_summary = extract_error_summary(&stderr);
+                Ok(BuildLocalDocsResult::CachedWithWarning {
+                    krate,
+                    warning: format!("Using cached docs (build failed: {})", error_summary),
+                })
+            } else {
+                // No cached docs, return the compilation error
+                bail!("Failed to build documentation:\n{}", stderr);
+            }
+        }
+        Err(e) => {
+            // Failed to run cargo at all
+            if e.kind() == std::io::ErrorKind::NotFound {
+                bail!("cargo not found. Please ensure Rust is installed.");
+            }
+            bail!("Failed to run cargo: {}", e);
+        }
+    }
+}
+
+/// Extract a short summary from compilation errors
+fn extract_error_summary(stderr: &str) -> String {
+    // Look for "error[E...]:" or "error:" lines
+    for line in stderr.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("error[E") || trimmed.starts_with("error:") {
+            // Return first ~80 chars
+            let summary: String = trimmed.chars().take(80).collect();
+            if trimmed.len() > 80 {
+                return format!("{}...", summary);
+            }
+            return summary;
+        }
+    }
+    "compilation error".to_string()
+}
 
 /// Load documentation from a local rustdoc JSON file
 pub fn load_local_docs(path: &Path) -> Result<Crate> {

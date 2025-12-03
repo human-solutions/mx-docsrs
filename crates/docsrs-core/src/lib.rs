@@ -9,7 +9,7 @@ mod version_resolver;
 
 use clap::Parser;
 use cli::Cli;
-use docfetch::{clear_cache, fetch_docs, load_local_docs};
+use docfetch::{BuildLocalDocsResult, build_local_docs, clear_cache, fetch_docs};
 use jsondoc::JsonDoc;
 use version_resolver::VersionResolver;
 
@@ -85,14 +85,22 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
                     output.push_str(&format!("{}\n", resolved.format_message()));
 
                     if resolved.is_local {
-                        // Load local docs if available
-                        if let Some(doc_path) = resolver.get_local_crate_doc_path(&crate_spec.name)
-                        {
-                            load_local_docs(&doc_path)?
-                        } else {
-                            // Local crate but no docs built yet - fetch from docs.rs
-                            let use_cache = !parsed_args.no_cache;
-                            fetch_docs(&crate_spec.name, &resolved.version, use_cache)?
+                        // Build and load local docs
+                        let doc_path = resolver
+                            .get_expected_doc_path(&crate_spec.name)
+                            .ok_or_else(|| {
+                                anyhow::anyhow!(
+                                    "Could not determine doc path for local crate {}",
+                                    crate_spec.name
+                                )
+                            })?;
+
+                        match build_local_docs(&resolved.name, &doc_path)? {
+                            BuildLocalDocsResult::Success(krate) => krate,
+                            BuildLocalDocsResult::CachedWithWarning { krate, warning } => {
+                                output.push_str(&format!("Warning: {}\n", warning));
+                                krate
+                            }
                         }
                     } else {
                         // External dependency - fetch from docs.rs
