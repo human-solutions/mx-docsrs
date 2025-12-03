@@ -3,12 +3,13 @@ use std::process;
 use docsrs_mcp::DocsRsServer;
 use rmcp::service::ServiceExt;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
 
     // Check for --mcp flag (ignores all other args)
     if args.iter().any(|a| a == "--mcp") {
-        run_mcp_server();
+        run_mcp_server().await;
     } else {
         run_cli(&args);
     }
@@ -28,12 +29,19 @@ fn run_cli(args: &[String]) {
     }
 }
 
-#[tokio::main]
 async fn run_mcp_server() {
     let server = DocsRsServer::new();
     let transport = rmcp::transport::stdio();
-    if let Err(e) = server.serve(transport).await.unwrap().waiting().await {
-        eprintln!("MCP server error: {}", e);
-        process::exit(1);
+    match server.serve(transport).await {
+        Ok(running) => {
+            if let Err(e) = running.waiting().await {
+                eprintln!("MCP server error: {}", e);
+                process::exit(1);
+            }
+        }
+        Err(e) => {
+            eprintln!("MCP server failed to start: {}", e);
+            process::exit(1);
+        }
     }
 }
