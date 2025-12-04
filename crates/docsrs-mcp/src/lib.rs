@@ -37,16 +37,23 @@ impl DocsRsServer {
         }
     }
 
-    #[tool(description = "Fetch Rust documentation from docs.rs.
+    #[tool(
+        description = "Fetch Rust documentation from docs.rs or local workspace crates.
 
 Single match: returns documentation and child items (modules, types, functions).
 Multiple matches: returns a list of matching items.
 
+Version resolution (when no @version specified):
+- Direct/transitive dependency: uses version from Cargo.toml
+- Local workspace crate: builds docs with cargo +nightly doc
+- Not found: falls back to latest on docs.rs
+
 Examples:
-- crate_spec: \"serde\" → crate docs + children (de, ser modules, etc.)
+- crate_spec: \"serde\" → crate docs (version from Cargo.toml)
 - crate_spec: \"tokio::spawn\" → function docs
 - crate_spec: \"serde@1.0\" → pinned version
-- crate_spec: \"tokio\", filter: \"spawn\" → list items matching \"spawn\"")]
+- crate_spec: \"tokio\", filter: \"spawn\" → items matching \"spawn\""
+    )]
     async fn lookup_docs(
         &self,
         params: Parameters<LookupDocsParams>,
