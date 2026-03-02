@@ -124,9 +124,10 @@ fn deeply_nested_is_found() {
 fn crate_visible_struct_not_found() {
     let (stdout, _stderr, success) = run_cli(&["test-visibility", "CrateVisibleStruct"]);
     assert!(success, "CLI should succeed (no results is not an error)");
-    assert_snapshot!(stdout, @r"
+    assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
 
+    // no matches for "CrateVisibleStruct" — showing all 13 items
     mod test_visibility
     const test_visibility::PUBLIC_CONST
     type test_visibility::PublicAlias
@@ -140,16 +141,17 @@ fn crate_visible_struct_not_found() {
     struct test_visibility::public_module::NestedPublic
     mod test_visibility::public_module::inner
     struct test_visibility::public_module::inner::DeeplyNested
-    ");
+    "#);
 }
 
 #[test]
 fn crate_visible_enum_not_found() {
     let (stdout, _stderr, success) = run_cli(&["test-visibility", "CrateVisibleEnum"]);
     assert!(success, "CLI should succeed (no results is not an error)");
-    assert_snapshot!(stdout, @r"
+    assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
 
+    // no matches for "CrateVisibleEnum" — showing all 13 items
     mod test_visibility
     const test_visibility::PUBLIC_CONST
     type test_visibility::PublicAlias
@@ -163,16 +165,17 @@ fn crate_visible_enum_not_found() {
     struct test_visibility::public_module::NestedPublic
     mod test_visibility::public_module::inner
     struct test_visibility::public_module::inner::DeeplyNested
-    ");
+    "#);
 }
 
 #[test]
 fn private_struct_not_found() {
     let (stdout, _stderr, success) = run_cli(&["test-visibility", "PrivateStruct"]);
     assert!(success, "CLI should succeed (no results is not an error)");
-    assert_snapshot!(stdout, @r"
+    assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
 
+    // no matches for "PrivateStruct" — showing all 13 items
     mod test_visibility
     const test_visibility::PUBLIC_CONST
     type test_visibility::PublicAlias
@@ -186,16 +189,17 @@ fn private_struct_not_found() {
     struct test_visibility::public_module::NestedPublic
     mod test_visibility::public_module::inner
     struct test_visibility::public_module::inner::DeeplyNested
-    ");
+    "#);
 }
 
 #[test]
 fn super_visible_not_found() {
     let (stdout, _stderr, success) = run_cli(&["test-visibility", "NestedSuperVisible"]);
     assert!(success, "CLI should succeed (no results is not an error)");
-    assert_snapshot!(stdout, @r"
+    assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
 
+    // no matches for "NestedSuperVisible" — showing all 13 items
     mod test_visibility
     const test_visibility::PUBLIC_CONST
     type test_visibility::PublicAlias
@@ -209,5 +213,5 @@ fn super_visible_not_found() {
     struct test_visibility::public_module::NestedPublic
     mod test_visibility::public_module::inner
     struct test_visibility::public_module::inner::DeeplyNested
-    ");
+    "#);
 }

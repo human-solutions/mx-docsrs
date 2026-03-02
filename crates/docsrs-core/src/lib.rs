@@ -154,8 +154,10 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
                 filter_by_path_prefix(&mut list, &crate_spec.name, prefix);
             }
 
-            // Filter by text filter
+            // Track whether filter narrows the list
+            let pre_filter_count = list.len();
             filter_list(&mut list, filter);
+            let filter_matched = list.len() < pre_filter_count;
 
             list.sort_by(|item1, item2| item1.path.cmp(&item2.path));
 
@@ -163,10 +165,24 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
                 doc::signature_for_id(&doc, &list[0].id)?
             } else {
                 let colorizer = rustdoc_fmt::Colorizer::get();
-                list.iter()
+
+                // Add descriptive header
+                let header = if filter_matched {
+                    format!("// {} items matching \"{}\"", list.len(), filter)
+                } else {
+                    format!(
+                        "// no matches for \"{}\" \u{2014} showing all {} items",
+                        filter,
+                        list.len()
+                    )
+                };
+
+                let items: Vec<String> = list
+                    .iter()
                     .map(|entry| colorizer.tokens(&entry.as_output().into_tokens()))
-                    .collect::<Vec<String>>()
-                    .join("\n")
+                    .collect();
+
+                format!("{}\n{}", header.bright_black(), items.join("\n"))
             }
         }
         // No path, no filter: show crate root doc

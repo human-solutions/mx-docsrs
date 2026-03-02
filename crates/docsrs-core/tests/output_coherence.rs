@@ -217,13 +217,14 @@ fn filter_multiple_matches_returns_list() {
     let (stdout, stderr, success) = run_cli(&["test-coherence", "process"]);
     assert!(success, "CLI should succeed: {stderr}");
     // "process" substring matches multiple items → returns sorted list
-    assert_snapshot!(stdout, @r"
+    assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
 
+    // 3 items matching "process"
     fn test_coherence::Processor::process
     fn test_coherence::Processor::process_batch
     fn test_coherence::process
-    ");
+    "#);
 }
 
 #[test]
@@ -234,9 +235,10 @@ fn filter_no_match_returns_full_list() {
         "CLI should succeed (no results is not an error): {stderr}"
     );
     // No matches → falls back to showing all items in the crate
-    assert_snapshot!(stdout, @r"
+    assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
 
+    // no matches for "zzz_nonexistent" — showing all 15 items
     mod test_coherence
     struct test_coherence::Container
     struct test_coherence::Error
@@ -252,7 +254,7 @@ fn filter_no_match_returns_full_list() {
     fn test_coherence::utils::format_debug
     mod test_coherence::utils::helpers
     fn test_coherence::utils::helpers::helper_fn
-    ");
+    "#);
 }
 
 #[test]
@@ -291,12 +293,13 @@ fn path_filter_within_module() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::utils", "helper"]);
     assert!(success, "CLI should succeed: {stderr}");
     // Searches only within the utils module scope
-    assert_snapshot!(stdout, @r"
+    assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
 
+    // 2 items matching "helper"
     mod test_coherence::utils::helpers
     fn test_coherence::utils::helpers::helper_fn
-    ");
+    "#);
 }
 
 #[test]
@@ -304,15 +307,16 @@ fn path_filter_no_match_in_scope() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::utils", "Container"]);
     assert!(success, "CLI should succeed: {stderr}");
     // Container is not in utils → falls back to showing all items in utils scope
-    assert_snapshot!(stdout, @r"
+    assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
 
+    // no matches for "Container" — showing all 5 items
     mod test_coherence::utils
     const test_coherence::utils::DEFAULT_BUFFER_SIZE
     fn test_coherence::utils::format_debug
     mod test_coherence::utils::helpers
     fn test_coherence::utils::helpers::helper_fn
-    ");
+    "#);
 }
 
 // =============================================================================
@@ -370,8 +374,7 @@ fn list_is_sorted_alphabetically() {
     assert!(success);
     let paths: Vec<&str> = stdout
         .lines()
-        .skip(1) // skip "// version..." line
-        .filter(|l| !l.is_empty())
+        .filter(|l| !l.is_empty() && !l.starts_with("//"))
         .map(|l| l.split_whitespace().last().unwrap())
         .collect();
     let mut sorted = paths.clone();
@@ -385,8 +388,7 @@ fn list_has_correct_kind_labels() {
     assert!(success);
     let kinds: Vec<(&str, &str)> = stdout
         .lines()
-        .skip(1)
-        .filter(|l| !l.is_empty())
+        .filter(|l| !l.is_empty() && !l.starts_with("//"))
         .map(|l| {
             let parts: Vec<&str> = l.split_whitespace().collect();
             (parts[0], *parts.last().unwrap())
@@ -414,7 +416,10 @@ fn list_has_correct_kind_labels() {
 fn list_no_duplicates() {
     let (stdout, _, success) = run_cli(&["test-coherence", "zzz_nonexistent"]);
     assert!(success);
-    let lines: Vec<&str> = stdout.lines().skip(1).filter(|l| !l.is_empty()).collect();
+    let lines: Vec<&str> = stdout
+        .lines()
+        .filter(|l| !l.is_empty() && !l.starts_with("//"))
+        .collect();
     let unique_count = {
         let mut seen = std::collections::HashSet::new();
         lines.iter().filter(|l| seen.insert(**l)).count()
