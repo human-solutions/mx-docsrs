@@ -54,7 +54,7 @@ fn path_lookup_struct() {
         pub label: String,
     }
 
-    // Methods
+    /* ======== Methods ======== */
     /// Creates a new `Container` with the given value and label.
     pub fn new(value: T, label: String) -> Self
     /// Returns a reference to the stored value.
@@ -204,7 +204,7 @@ fn filter_single_match_returns_doc() {
         pub label: String,
     }
 
-    // Methods
+    /* ======== Methods ======== */
     /// Creates a new `Container` with the given value and label.
     pub fn new(value: T, label: String) -> Self
     /// Returns a reference to the stored value.

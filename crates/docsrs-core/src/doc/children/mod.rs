@@ -39,13 +39,18 @@ fn write_body_block(output: &mut String, items: &[(Option<String>, String)], tra
     output.push('}');
 }
 
-/// Write a `// Heading` comment section followed by items with `///` doc comments.
+/// Format a block comment section header: `/* ======== Heading ======== */`
+fn format_block_header(heading: &str) -> String {
+    format!("/* ======== {heading} ======== */")
+}
+
+/// Write a section header followed by items with `///` doc comments.
 fn write_comment_section(output: &mut String, heading: &str, items: &[(Option<String>, String)]) {
     if items.is_empty() {
         return;
     }
-    output.push_str("\n// ");
-    output.push_str(heading);
+    output.push('\n');
+    output.push_str(&format_block_header(heading));
     output.push('\n');
     for (doc, signature) in items {
         if let Some(doc_line) = doc {
@@ -58,12 +63,14 @@ fn write_comment_section(output: &mut String, heading: &str, items: &[(Option<St
     }
 }
 
-/// Write a `// Trait Implementations` section with `impl ... { .. }` lines.
+/// Write a trait implementations section with `impl ... { .. }` lines.
 fn write_trait_impls(output: &mut String, impls: &[String]) {
     if impls.is_empty() {
         return;
     }
-    output.push_str("\n// Trait Implementations\n");
+    output.push('\n');
+    output.push_str(&format_block_header("Trait Implementations"));
+    output.push('\n');
     for trait_impl in impls {
         output.push_str(trait_impl);
         output.push_str(" { .. }\n");

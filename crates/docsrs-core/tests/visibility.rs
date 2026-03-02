@@ -18,7 +18,7 @@ fn public_struct_is_found() {
         pub public_field: String,
     }
 
-    // Methods
+    /* ======== Methods ======== */
     /// Public constructor
     pub fn new(public_field: String, private_field: i32) -> Self
     ");
