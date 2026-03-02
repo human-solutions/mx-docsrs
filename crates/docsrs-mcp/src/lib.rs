@@ -1,8 +1,8 @@
 use rmcp::handler::server::tool::{ToolCallContext, ToolRouter};
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{
-    CallToolRequestParam, CallToolResult, Content, Implementation, ListToolsResult,
-    PaginatedRequestParam, ServerCapabilities, ServerInfo,
+    CallToolRequestParams, CallToolResult, Content, Implementation, ListToolsResult,
+    PaginatedRequestParams, ServerCapabilities, ServerInfo,
 };
 use rmcp::service::{RequestContext, RoleServer};
 use rmcp::{ErrorData as McpError, ServerHandler, tool, tool_router};
@@ -93,18 +93,19 @@ impl ServerHandler for DocsRsServer {
 
     async fn list_tools(
         &self,
-        _request: Option<PaginatedRequestParam>,
+        _request: Option<PaginatedRequestParams>,
         _context: RequestContext<RoleServer>,
     ) -> Result<ListToolsResult, McpError> {
         Ok(ListToolsResult {
             tools: self.tool_router.list_all(),
             next_cursor: None,
+            meta: None,
         })
     }
 
     async fn call_tool(
         &self,
-        request: CallToolRequestParam,
+        request: CallToolRequestParams,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, McpError> {
         let tool_context = ToolCallContext::new(self, request, context);

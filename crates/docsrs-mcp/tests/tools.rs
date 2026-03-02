@@ -1,6 +1,6 @@
 use docsrs_mcp::DocsRsServer;
 use rmcp::ClientHandler;
-use rmcp::model::{CallToolRequestParam, ClientInfo, Implementation};
+use rmcp::model::{CallToolRequestParams, ClientInfo, Implementation};
 use rmcp::service::ServiceExt;
 
 /// Minimal client handler for testing
@@ -40,9 +40,11 @@ async fn call_tool(tool: impl Into<String>, args: serde_json::Value) -> (String,
     let client_service = client.serve(client_io).await.unwrap();
 
     // Call the tool
-    let request = CallToolRequestParam {
+    let request = CallToolRequestParams {
         name: tool.into(),
         arguments: Some(args.as_object().cloned().unwrap_or_default()),
+        meta: None,
+        task: None,
     };
 
     let result = client_service.call_tool(request).await.unwrap();
