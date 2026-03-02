@@ -44,15 +44,15 @@ impl EntryKind {
 
     fn keyword(self) -> &'static str {
         match self {
-            EntryKind::Module => "mod   ",
+            EntryKind::Module => "mod",
             EntryKind::Struct => "struct",
-            EntryKind::Enum => "enum  ",
-            EntryKind::Trait => "trait ",
-            EntryKind::Function => "fn    ",
-            EntryKind::Constant => "const ",
+            EntryKind::Enum => "enum",
+            EntryKind::Trait => "trait",
+            EntryKind::Function => "fn",
+            EntryKind::Constant => "const",
             EntryKind::Static => "static",
-            EntryKind::TypeAlias => "type  ",
-            EntryKind::Macro => "macro ",
+            EntryKind::TypeAlias => "type",
+            EntryKind::Macro => "macro",
         }
     }
 }
@@ -100,6 +100,7 @@ impl ListItem {
         })
     }
 
+    /// Full-path output for search results: `fn crate::path::name`
     pub fn as_output(&self) -> Output {
         let mut out = Output::new();
 
@@ -109,32 +110,68 @@ impl ListItem {
         for (i, (seg, seg_kind)) in self.module.iter().enumerate() {
             let is_last = i == last_idx;
             if is_last {
-                match self.kind {
-                    EntryKind::Macro => out.identifier(seg).symbol("!"),
-                    EntryKind::Constant | EntryKind::Static => out.symbol(seg),
-                    EntryKind::Enum
-                    | EntryKind::Struct
-                    | EntryKind::Trait
-                    | EntryKind::TypeAlias => out.type_(seg),
-                    EntryKind::Function => out.function(seg),
-                    _ => out.identifier(seg),
-                };
+                Self::color_last_segment(&mut out, seg, self.kind);
             } else {
-                // Apply correct coloring based on segment kind
-                match seg_kind {
-                    EntryKind::Enum
-                    | EntryKind::Struct
-                    | EntryKind::Trait
-                    | EntryKind::TypeAlias => out.type_(seg),
-                    EntryKind::Function => out.function(seg),
-                    EntryKind::Macro => out.identifier(seg).symbol("!"),
-                    EntryKind::Constant | EntryKind::Static => out.symbol(seg),
-                    _ => out.identifier(seg),
-                };
+                Self::color_path_segment(&mut out, seg, seg_kind);
                 out.symbol("::");
             }
         }
 
         out
+    }
+
+    /// Module-relative output for child listings: `pub struct Name`
+    pub fn as_module_child(&self) -> Output {
+        let mut out = Output::new();
+
+        out.qualifier("pub").whitespace();
+        out.kind(self.kind.keyword()).whitespace();
+
+        // Use just the last segment (the item name)
+        if let Some((name, _)) = self.module.last() {
+            Self::color_last_segment(&mut out, name, self.kind);
+        }
+
+        out
+    }
+
+    fn color_last_segment(out: &mut Output, seg: &str, kind: EntryKind) {
+        match kind {
+            EntryKind::Macro => {
+                out.identifier(seg).symbol("!");
+            }
+            EntryKind::Constant | EntryKind::Static => {
+                out.symbol(seg);
+            }
+            EntryKind::Enum | EntryKind::Struct | EntryKind::Trait | EntryKind::TypeAlias => {
+                out.type_(seg);
+            }
+            EntryKind::Function => {
+                out.function(seg);
+            }
+            _ => {
+                out.identifier(seg);
+            }
+        };
+    }
+
+    fn color_path_segment(out: &mut Output, seg: &str, seg_kind: &EntryKind) {
+        match seg_kind {
+            EntryKind::Enum | EntryKind::Struct | EntryKind::Trait | EntryKind::TypeAlias => {
+                out.type_(seg);
+            }
+            EntryKind::Function => {
+                out.function(seg);
+            }
+            EntryKind::Macro => {
+                out.identifier(seg).symbol("!");
+            }
+            EntryKind::Constant | EntryKind::Static => {
+                out.symbol(seg);
+            }
+            _ => {
+                out.identifier(seg);
+            }
+        };
     }
 }

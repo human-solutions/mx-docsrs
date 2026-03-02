@@ -82,8 +82,11 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
         match VersionResolver::new() {
             Ok(resolver) => {
                 if let Some(resolved) = resolver.resolve_crate(&crate_spec.name) {
-                    // Print resolution message
-                    output.push_str(&format!("{}\n\n", resolved.format_message().bright_black()));
+                    // Print resolution message as a comment
+                    output.push_str(&format!(
+                        "{}\n\n",
+                        format!("// {}", resolved.format_message()).bright_black()
+                    ));
 
                     if resolved.is_local {
                         // Build and load local docs
@@ -110,14 +113,20 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
                     }
                 } else {
                     // Not found in project, use latest
-                    output.push_str(&format!("Using {}@latest\n", crate_spec.name));
+                    output.push_str(&format!(
+                        "{}\n\n",
+                        format!("// {}@latest", crate_spec.name).bright_black()
+                    ));
                     let use_cache = !parsed_args.no_cache;
                     fetch_docs(&crate_spec.name, "latest", use_cache)?
                 }
             }
             Err(_) => {
                 // No Cargo.toml found, default to latest
-                output.push_str(&format!("Using {}@latest\n", crate_spec.name));
+                output.push_str(&format!(
+                    "{}\n\n",
+                    format!("// {}@latest", crate_spec.name).bright_black()
+                ));
                 let use_cache = !parsed_args.no_cache;
                 fetch_docs(&crate_spec.name, "latest", use_cache)?
             }

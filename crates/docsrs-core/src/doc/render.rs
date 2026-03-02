@@ -434,6 +434,17 @@ impl<'c> RenderingContext<'c> {
         output
     }
 
+    /// Render a trait method signature (without `pub` qualifier).
+    pub fn render_method(
+        &self,
+        name: Output,
+        sig: &FunctionSignature,
+        generics: &Generics,
+        header: &FunctionHeader,
+    ) -> Output {
+        self.render_function_inner(name, sig, generics, header, false)
+    }
+
     pub fn render_function(
         &self,
         name: Output,
@@ -441,7 +452,22 @@ impl<'c> RenderingContext<'c> {
         generics: &Generics,
         header: &FunctionHeader,
     ) -> Output {
-        let mut output = Output::new().qualifier_pub();
+        self.render_function_inner(name, sig, generics, header, true)
+    }
+
+    fn render_function_inner(
+        &self,
+        name: Output,
+        sig: &FunctionSignature,
+        generics: &Generics,
+        header: &FunctionHeader,
+        include_pub: bool,
+    ) -> Output {
+        let mut output = if include_pub {
+            Output::new().qualifier_pub()
+        } else {
+            Output::new()
+        };
         if header.is_unsafe {
             output.qualifier("unsafe").whitespace();
         };

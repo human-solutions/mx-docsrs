@@ -16,22 +16,56 @@ fn first_doc_line(docs: &Option<String>) -> Option<String> {
         .map(|line| line.to_string())
 }
 
-/// Write a section of items with optional doc comments above each signature.
-fn write_section(output: &mut String, heading: &str, items: &[(Option<String>, String)]) {
+/// Write items inside a `{ }` body block with given trailing punctuation.
+///
+/// Each item is indented 4 spaces. If an item has a doc comment, it's written
+/// as `/// doc` above the item line.
+fn write_body_block(output: &mut String, items: &[(Option<String>, String)], trailing: &str) {
     if items.is_empty() {
         return;
     }
-    output.push('\n');
-    output.push_str(heading);
-    output.push_str(":\n");
+    output.push_str(" {\n");
     for (doc, signature) in items {
         if let Some(doc_line) = doc {
-            output.push_str("  /// ");
+            output.push_str("    /// ");
             output.push_str(doc_line);
             output.push('\n');
         }
-        output.push_str("  ");
+        output.push_str("    ");
+        output.push_str(signature);
+        output.push_str(trailing);
+        output.push('\n');
+    }
+    output.push('}');
+}
+
+/// Write a `// Heading` comment section followed by items with `///` doc comments.
+fn write_comment_section(output: &mut String, heading: &str, items: &[(Option<String>, String)]) {
+    if items.is_empty() {
+        return;
+    }
+    output.push_str("\n// ");
+    output.push_str(heading);
+    output.push('\n');
+    for (doc, signature) in items {
+        if let Some(doc_line) = doc {
+            output.push_str("/// ");
+            output.push_str(doc_line);
+            output.push('\n');
+        }
         output.push_str(signature);
         output.push('\n');
+    }
+}
+
+/// Write a `// Trait Implementations` section with `impl ... { .. }` lines.
+fn write_trait_impls(output: &mut String, impls: &[String]) {
+    if impls.is_empty() {
+        return;
+    }
+    output.push_str("\n// Trait Implementations\n");
+    for trait_impl in impls {
+        output.push_str(trait_impl);
+        output.push_str(" { .. }\n");
     }
 }

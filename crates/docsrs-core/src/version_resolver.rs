@@ -46,8 +46,6 @@ pub struct ResolvedCrate {
     pub kind: DependencyKind,
     /// Whether this is a local workspace crate
     pub is_local: bool,
-    /// Path for local crates
-    pub local_path: Option<PathBuf>,
     /// If the dependency was renamed in Cargo.toml (the alias used)
     pub alias: Option<String>,
     /// For transitive dependencies: the chain from workspace member to target
@@ -59,19 +57,11 @@ impl ResolvedCrate {
     /// Format the resolution message for display
     pub fn format_message(&self) -> String {
         if self.is_local {
-            let path = self
-                .local_path
-                .as_ref()
-                .map(|p| p.display().to_string())
-                .unwrap_or_else(|| ".".to_string());
-            format!(
-                "Using local dependency version {} at {}",
-                self.version, path
-            )
+            format!("version {} (local)", self.version)
         } else if let Some(chain) = &self.dep_chain {
             // Transitive dependency
             let chain_str = format_dep_chain(chain);
-            format!("Found {}@{} via: {}", self.name, self.version, chain_str)
+            format!("found {}@{} via: {}", self.name, self.version, chain_str)
         } else {
             // Direct dependency
             let alias_suffix = self
@@ -80,7 +70,7 @@ impl ResolvedCrate {
                 .map(|a| format!(" (aliased as '{}')", a))
                 .unwrap_or_default();
             format!(
-                "Using {} {}@{}{}",
+                "{} {}@{}{}",
                 self.kind, self.name, self.version, alias_suffix
             )
         }
@@ -171,13 +161,11 @@ impl VersionResolver {
         for member_id in &self.metadata.workspace_members {
             for pkg in &self.metadata.packages {
                 if pkg.id == *member_id && normalize_crate_name(&pkg.name) == crate_name {
-                    let local_path = pkg.manifest_path.parent().map(|p| p.into());
                     return Some(ResolvedCrate {
                         name: pkg.name.to_string(),
                         version: pkg.version.to_string(),
                         kind: DependencyKind::Normal,
                         is_local: true,
-                        local_path,
                         alias: None,
                         dep_chain: None,
                     });
@@ -229,7 +217,7 @@ impl VersionResolver {
                                 version: pkg.version.to_string(),
                                 kind: dep.kind.into(),
                                 is_local: false,
-                                local_path: None,
+
                                 alias,
                                 dep_chain: None,
                             });
@@ -272,7 +260,7 @@ impl VersionResolver {
                     version,
                     kind: DependencyKind::Normal, // Transitive deps are always "normal" from our perspective
                     is_local: false,
-                    local_path: None,
+
                     alias: None,
                     dep_chain: Some(chain),
                 });
@@ -454,11 +442,11 @@ mod tests {
             version: "1.0.210".to_string(),
             kind: DependencyKind::Normal,
             is_local: false,
-            local_path: None,
+
             alias: None,
             dep_chain: None,
         };
-        assert_eq!(resolved.format_message(), "Using dependency serde@1.0.210");
+        assert_eq!(resolved.format_message(), "dependency serde@1.0.210");
     }
 
     #[test]
@@ -468,14 +456,11 @@ mod tests {
             version: "1.43.0".to_string(),
             kind: DependencyKind::Dev,
             is_local: false,
-            local_path: None,
+
             alias: None,
             dep_chain: None,
         };
-        assert_eq!(
-            resolved.format_message(),
-            "Using dev-dependency insta@1.43.0"
-        );
+        assert_eq!(resolved.format_message(), "dev-dependency insta@1.43.0");
     }
 
     #[test]
@@ -485,14 +470,11 @@ mod tests {
             version: "0.1.0".to_string(),
             kind: DependencyKind::Normal,
             is_local: true,
-            local_path: Some(PathBuf::from("./crates/my-lib")),
+
             alias: None,
             dep_chain: None,
         };
-        assert_eq!(
-            resolved.format_message(),
-            "Using local dependency version 0.1.0 at ./crates/my-lib"
-        );
+        assert_eq!(resolved.format_message(), "version 0.1.0 (local)");
     }
 
     #[test]
@@ -502,7 +484,7 @@ mod tests {
             version: "1.0.210".to_string(),
             kind: DependencyKind::Normal,
             is_local: false,
-            local_path: None,
+
             alias: None,
             dep_chain: Some(vec![
                 "my-app".to_string(),
@@ -512,7 +494,7 @@ mod tests {
         };
         assert_eq!(
             resolved.format_message(),
-            "Found serde_derive@1.0.210 via: my-app → serde → serde_derive"
+            "found serde_derive@1.0.210 via: my-app → serde → serde_derive"
         );
     }
 
@@ -523,7 +505,7 @@ mod tests {
             version: "0.1.0".to_string(),
             kind: DependencyKind::Normal,
             is_local: false,
-            local_path: None,
+
             alias: None,
             dep_chain: Some(vec![
                 "app".to_string(),
@@ -535,7 +517,7 @@ mod tests {
         };
         assert_eq!(
             resolved.format_message(),
-            "Found deep@0.1.0 via: app → level1 → ... → deep"
+            "found deep@0.1.0 via: app → level1 → ... → deep"
         );
     }
 
@@ -546,13 +528,13 @@ mod tests {
             version: "1.0.128".to_string(),
             kind: DependencyKind::Normal,
             is_local: false,
-            local_path: None,
+
             alias: Some("json".to_string()),
             dep_chain: None,
         };
         assert_eq!(
             resolved.format_message(),
-            "Using dependency serde_json@1.0.128 (aliased as 'json')"
+            "dependency serde_json@1.0.128 (aliased as 'json')"
         );
     }
 

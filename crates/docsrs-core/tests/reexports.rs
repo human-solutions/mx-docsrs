@@ -10,7 +10,7 @@ fn simple_struct_reexport() {
     let (stdout, stderr, success) = run_cli(&["test-reexports", "InnerStruct"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
     struct test_reexports::InnerStruct
     struct test_reexports::reexported::InnerStruct
@@ -22,10 +22,10 @@ fn simple_enum_reexport() {
     let (stdout, stderr, success) = run_cli(&["test-reexports", "InnerEnum"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
-    enum   test_reexports::InnerEnum
-    enum   test_reexports::reexported::InnerEnum
+    enum test_reexports::InnerEnum
+    enum test_reexports::reexported::InnerEnum
     ");
 }
 
@@ -34,10 +34,10 @@ fn simple_function_reexport() {
     let (stdout, stderr, success) = run_cli(&["test-reexports", "inner_function"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
-    fn     test_reexports::inner_function
-    fn     test_reexports::reexported::inner_function
+    fn test_reexports::inner_function
+    fn test_reexports::reexported::inner_function
     ");
 }
 
@@ -48,14 +48,12 @@ fn renamed_struct_is_found() {
     let (stdout, stderr, success) = run_cli(&["test-reexports", "RenamedStruct"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
-    pub struct test_reexports::ChainedReexport
-
-    A struct defined in inner module
-
-    Fields:
-      pub field: String
+    /// A struct defined in inner module
+    pub struct test_reexports::ChainedReexport {
+        pub field: String,
+    }
     ");
 }
 
@@ -66,14 +64,12 @@ fn deeply_nested_reexport() {
     let (stdout, stderr, success) = run_cli(&["test-reexports", "DeeplyNestedItem"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
-    pub struct test_reexports::DeeplyNestedItem
-
-    A deeply nested struct
-
-    Fields:
-      pub value: usize
+    /// A deeply nested struct
+    pub struct test_reexports::DeeplyNestedItem {
+        pub value: usize,
+    }
     ");
 }
 
@@ -84,7 +80,7 @@ fn selective_foo_is_found() {
     let (stdout, stderr, success) = run_cli(&["test-reexports::selective", "Foo"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
     pub struct test_reexports::selective::Foo
     ");
@@ -95,7 +91,7 @@ fn selective_bar_is_found() {
     let (stdout, stderr, success) = run_cli(&["test-reexports::selective", "Bar"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
     pub struct test_reexports::selective::Bar
     ");
@@ -106,9 +102,9 @@ fn selective_baz_not_found() {
     let (stdout, _stderr, success) = run_cli(&["test-reexports::selective", "Baz"]);
     assert!(success, "CLI should succeed (no results is not an error)");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
-    mod    test_reexports::selective
+    mod test_reexports::selective
     struct test_reexports::selective::Bar
     struct test_reexports::selective::Foo
     ");
@@ -121,12 +117,12 @@ fn trait_reexport() {
     let (stdout, stderr, success) = run_cli(&["test-reexports", "MyTrait"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
-    trait  test_reexports::MyTrait
-    fn     test_reexports::MyTrait::do_something
-    trait  test_reexports::traits::MyTrait
-    fn     test_reexports::traits::MyTrait::do_something
+    trait test_reexports::MyTrait
+    fn test_reexports::MyTrait::do_something
+    trait test_reexports::traits::MyTrait
+    fn test_reexports::traits::MyTrait::do_something
     ");
 }
 
@@ -135,7 +131,7 @@ fn trait_impl_reexport() {
     let (stdout, stderr, success) = run_cli(&["test-reexports", "TraitImpl"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
     struct test_reexports::TraitImpl
     struct test_reexports::traits::TraitImpl

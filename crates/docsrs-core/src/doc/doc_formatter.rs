@@ -14,27 +14,36 @@ pub fn format_doc(krate: &Crate, item: &PublicItem, context: &RenderingContext) 
     let colorizer = Colorizer::get();
     let mut output = String::new();
 
-    // Display the item signature
+    // Build the signature string (without trailing newline yet)
     let signature = colorizer.tokens(&item.tokens);
-
-    output.push_str(&signature);
-    output.push('\n');
 
     // Try to get the full Item from the crate index to access documentation
     if let Some(full_item) = krate.index.get(&item._id) {
+        // 1. Format docs with "/// " prefix on each line (above signature)
         if let Some(docs) = &full_item.docs {
-            output.push('\n');
             let resolver = RustdocLinkResolver {
                 item_links: &full_item.links,
                 krate,
                 id_to_items: &context.id_to_items,
             };
             let formatted_docs = format_markdown(docs, &resolver);
-            output.push_str(&formatted_docs);
-            output.push('\n');
+            for line in formatted_docs.lines() {
+                if line.is_empty() {
+                    output.push_str("///\n");
+                } else {
+                    output.push_str("/// ");
+                    output.push_str(line);
+                    output.push('\n');
+                }
+            }
         }
 
-        // Format child items based on item type
+        // 2. Signature
+        output.push_str(&signature);
+
+        // 3. Format child items based on item type
+        // Children that produce body blocks (struct/enum/trait) append " { ... }\n"
+        // Others just append "\n"
         match &full_item.inner {
             ItemEnum::Struct(struct_) => {
                 format_struct_children(krate, struct_, &mut output, context)?;
@@ -46,12 +55,16 @@ pub fn format_doc(krate: &Crate, item: &PublicItem, context: &RenderingContext) 
                 format_trait_children(krate, trait_, &mut output, context)?;
             }
             ItemEnum::Module(module) => {
+                output.push('\n');
                 format_module_children(krate, module, &mut output, context)?;
             }
             _ => {
-                // Other item types don't have child items to display
+                output.push('\n');
             }
         }
+    } else {
+        output.push_str(&signature);
+        output.push('\n');
     }
 
     Ok(output)

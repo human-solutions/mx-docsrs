@@ -3,7 +3,7 @@ use jsondoc::ImplKind;
 use rustdoc_fmt::{Colorizer, Output};
 use rustdoc_types::{Crate, ItemEnum, StructKind, Visibility};
 
-use super::{first_doc_line, write_section};
+use super::{first_doc_line, write_body_block, write_comment_section, write_trait_impls};
 use crate::doc::render::RenderingContext;
 
 /// Format child items for a struct (fields, methods and trait implementations)
@@ -15,7 +15,6 @@ pub(crate) fn format_struct_children(
 ) -> Result<()> {
     let colorizer = Colorizer::get();
     let mut plain_fields: Vec<(Option<String>, String)> = Vec::new();
-    let mut tuple_fields: Vec<(Option<String>, String)> = Vec::new();
     let mut methods: Vec<(Option<String>, String)> = Vec::new();
     let mut trait_impls = Vec::new();
 
@@ -43,30 +42,8 @@ pub(crate) fn format_struct_children(
                 }
             }
         }
-        StructKind::Tuple(fields) => {
-            // Process tuple fields
-            for (index, field_id_opt) in fields.iter().enumerate() {
-                if let Some(field_id) = field_id_opt
-                    && let Some(field_item) = krate.index.get(field_id)
-                    && matches!(field_item.visibility, Visibility::Public)
-                    && let ItemEnum::StructField(field_type) = &field_item.inner
-                {
-                    let mut field_output = Output::new();
-                    field_output.symbol(index.to_string());
-                    field_output.symbol(":");
-                    field_output.whitespace();
-                    field_output.qualifier("pub");
-                    field_output.whitespace();
-                    field_output.extend(context.render_type(field_type));
-
-                    let field_str = colorizer.tokens(&field_output.into_tokens());
-                    let doc = first_doc_line(&field_item.docs);
-                    tuple_fields.push((doc, field_str));
-                }
-            }
-        }
-        StructKind::Unit => {
-            // Unit structs have no fields
+        StructKind::Tuple(_) | StructKind::Unit => {
+            // Tuple structs have fields in the signature already; unit structs have no fields
         }
     }
 
@@ -110,21 +87,16 @@ pub(crate) fn format_struct_children(
         }
     }
 
-    // Output sections
-    write_section(output, "Fields", &plain_fields);
-    write_section(output, "Tuple Fields", &tuple_fields);
-    write_section(output, "Methods", &methods);
-
-    // Trait impls don't get doc comments (they're just impl signatures)
-    if !trait_impls.is_empty() {
+    // Output: fields in { } block, methods and trait impls after
+    if !plain_fields.is_empty() {
+        write_body_block(output, &plain_fields, ",");
         output.push('\n');
-        output.push_str("Trait Implementations:\n");
-        for trait_impl in trait_impls {
-            output.push_str("  ");
-            output.push_str(&trait_impl);
-            output.push('\n');
-        }
+    } else {
+        output.push('\n');
     }
+
+    write_comment_section(output, "Methods", &methods);
+    write_trait_impls(output, &trait_impls);
 
     Ok(())
 }

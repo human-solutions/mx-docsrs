@@ -3,7 +3,7 @@ use jsondoc::ImplKind;
 use rustdoc_fmt::{Colorizer, Output};
 use rustdoc_types::{Crate, ItemEnum, Variant};
 
-use super::{first_doc_line, write_section};
+use super::{first_doc_line, write_body_block, write_comment_section, write_trait_impls};
 use crate::doc::render::RenderingContext;
 
 /// Format child items for an enum (variants, methods and trait implementations)
@@ -70,20 +70,16 @@ pub(crate) fn format_enum_children(
         }
     }
 
-    // Output sections
-    write_section(output, "Variants", &variants);
-    write_section(output, "Methods", &methods);
-
-    // Trait impls don't get doc comments
-    if !trait_impls.is_empty() {
+    // Output: variants in { } block, methods and trait impls after
+    if !variants.is_empty() {
+        write_body_block(output, &variants, ",");
         output.push('\n');
-        output.push_str("Trait Implementations:\n");
-        for trait_impl in trait_impls {
-            output.push_str("  ");
-            output.push_str(&trait_impl);
-            output.push('\n');
-        }
+    } else {
+        output.push('\n');
     }
+
+    write_comment_section(output, "Methods", &methods);
+    write_trait_impls(output, &trait_impls);
 
     Ok(())
 }

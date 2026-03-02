@@ -66,25 +66,8 @@ async fn call_tool(tool: impl Into<String>, args: serde_json::Value) -> (String,
 }
 
 fn normalize_output(output: &str) -> String {
-    // Same normalization as CLI tests
-    output
-        .lines()
-        .map(|line| {
-            if line.starts_with("Local crate found at: ") {
-                "Local crate found at: [LOCAL_PATH]".to_string()
-            } else if let Some(rest) = line.strip_prefix("Using local dependency version ") {
-                if let Some(at_idx) = rest.find(" at /") {
-                    let version = &rest[..at_idx];
-                    format!("Using local dependency version {version} at [LOCAL_PATH]")
-                } else {
-                    line.to_string()
-                }
-            } else {
-                line.to_string()
-            }
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
+    // No machine-specific paths in the new comment format
+    output.to_string()
 }
 
 #[tokio::test]
@@ -114,11 +97,10 @@ async fn lookup_docs_with_path() {
         "lookup_docs should not fail for valid crate path"
     );
     insta::assert_snapshot!(output, @r#"
-    Using dependency serde@1.0.228
+    // dependency serde@1.0.228
 
+    /// Derive macro available if serde is built with `features = ["derive"]`.
     pub use serde::Deserialize
-
-    Derive macro available if serde is built with `features = ["derive"]`.
     "#);
 }
 

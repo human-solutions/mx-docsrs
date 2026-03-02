@@ -31,11 +31,11 @@ pub(crate) fn format_module_children(
     // Sort items by path for consistent output
     items.sort_by(|a, b| a.path.cmp(&b.path));
 
-    // Output all items in list format
+    // Output all items using module-relative rendering: "pub TYPE Name"
     if !items.is_empty() {
         output.push('\n');
         for item in items {
-            output.push_str(&colorizer.tokens(&item.as_output().into_tokens()));
+            output.push_str(&colorizer.tokens(&item.as_module_child().into_tokens()));
             output.push('\n');
         }
     }

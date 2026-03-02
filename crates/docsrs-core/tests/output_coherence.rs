@@ -12,23 +12,22 @@ fn crate_root_shows_doc_and_children() {
     let (stdout, stderr, success) = run_cli(&["test-coherence"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
+    /// A test crate for output coherence testing.
+    ///
+    /// This crate provides various Rust item types to verify that the docsrs
+    /// tool produces consistent, well-formed output across all query modes.
     pub mod test_coherence
 
-    A test crate for output coherence testing.
-
-    This crate provides various Rust item types to verify that the docsrs
-    tool produces consistent, well-formed output across all query modes.
-
-    struct test_coherence::Container
-    struct test_coherence::Error
-    const  test_coherence::MAX_SIZE
-    trait  test_coherence::Processor
-    type   test_coherence::Result
-    enum   test_coherence::Status
-    fn     test_coherence::process
-    mod    test_coherence::utils
+    pub struct Container
+    pub struct Error
+    pub const MAX_SIZE
+    pub trait Processor
+    pub type Result
+    pub enum Status
+    pub fn process
+    pub mod utils
     ");
 }
 
@@ -41,27 +40,25 @@ fn path_lookup_struct() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::Container"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r#"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
-    pub struct test_coherence::Container<T>
+    /// A generic container with public fields and methods.
+    ///
+    /// Examples
+    ///
+    ///   let c = Container::new("hello".into(), 42);
+    pub struct test_coherence::Container<T> {
+        /// The stored value.
+        pub value: T,
+        /// An optional label for the container.
+        pub label: String,
+    }
 
-    A generic container with public fields and methods.
-
-    Examples
-
-      let c = Container::new("hello".into(), 42);
-
-    Fields:
-      /// The stored value.
-      pub value: T
-      /// An optional label for the container.
-      pub label: String
-
-    Methods:
-      /// Creates a new `Container` with the given value and label.
-      pub fn new(value: T, label: String) -> Self
-      /// Returns a reference to the stored value.
-      pub fn get(&self) -> &T
+    // Methods
+    /// Creates a new `Container` with the given value and label.
+    pub fn new(value: T, label: String) -> Self
+    /// Returns a reference to the stored value.
+    pub fn get(&self) -> &T
     "#);
 }
 
@@ -70,19 +67,17 @@ fn path_lookup_enum() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::Status"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
-    pub enum test_coherence::Status
-
-    Represents the status of an operation.
-
-    Variants:
-      /// The operation has not started.
-      Pending
-      /// The operation is running with a progress percentage.
-      Running(u8)
-      /// The operation completed with a result message.
-      Done { message: String }
+    /// Represents the status of an operation.
+    pub enum test_coherence::Status {
+        /// The operation has not started.
+        Pending,
+        /// The operation is running with a progress percentage.
+        Running(u8),
+        /// The operation completed with a result message.
+        Done { message: String },
+    }
     ");
 }
 
@@ -91,32 +86,24 @@ fn path_lookup_trait() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::Processor"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
-    pub trait test_coherence::Processor
-
-    A trait for processing items.
-
-    Implementors define how items of type [`Self::Input`] are transformed
-    into [`Self::Output`].
-
-    Associated Types:
-      /// The input type.
-      type Input
-      /// The output type.
-      type Output
-
-    Associated Constants:
-      /// The default batch size.
-      const DEFAULT_BATCH_SIZE: usize
-
-    Required Methods:
-      /// Processes a single item.
-      pub fn process(&self, input: Self::Input) -> Self::Output
-
-    Provided Methods:
-      /// Processes a batch of items using the default implementation.
-      pub fn process_batch(&self, items: Vec<Self::Input>) -> Vec<Self::Output>
+    /// A trait for processing items.
+    ///
+    /// Implementors define how items of type [`Self::Input`] are transformed
+    /// into [`Self::Output`].
+    pub trait test_coherence::Processor {
+        /// The input type.
+        type Input;
+        /// The output type.
+        type Output;
+        /// The default batch size.
+        const DEFAULT_BATCH_SIZE: usize;
+        /// Processes a single item.
+        fn process(&self, input: Self::Input) -> Self::Output;
+        /// Processes a batch of items using the default implementation.
+        fn process_batch(&self, items: Vec<Self::Input>) -> Vec<Self::Output> { .. }
+    }
     ");
 }
 
@@ -125,13 +112,12 @@ fn path_lookup_function() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::process"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
+    /// Processes the input value, applying the given transformation.
+    ///
+    /// This function accepts any type that implements `Into<String>`.
     pub fn test_coherence::process<T>(input: T) -> String where T: Into<String>
-
-    Processes the input value, applying the given transformation.
-
-    This function accepts any type that implements `Into<String>`.
     ");
 }
 
@@ -140,15 +126,14 @@ fn path_lookup_module() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::utils"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
+    /// Utility functions for common operations.
     pub mod test_coherence::utils
 
-    Utility functions for common operations.
-
-    const  test_coherence::utils::DEFAULT_BUFFER_SIZE
-    fn     test_coherence::utils::format_debug
-    mod    test_coherence::utils::helpers
+    pub const DEFAULT_BUFFER_SIZE
+    pub fn format_debug
+    pub mod helpers
     ");
 }
 
@@ -157,11 +142,10 @@ fn path_lookup_const() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::MAX_SIZE"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
+    /// The maximum allowed size for a container.
     pub const test_coherence::MAX_SIZE: usize
-
-    The maximum allowed size for a container.
     ");
 }
 
@@ -170,11 +154,10 @@ fn path_lookup_type_alias() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::Result"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
+    /// A type alias for results with [`Error`].
     pub type test_coherence::Result<T> = Result<T, test_coherence::Error>
-
-    A type alias for results with [`Error`].
     ");
 }
 
@@ -183,11 +166,10 @@ fn path_lookup_nested() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::utils::helpers::helper_fn"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
+    /// A helper function that returns a greeting.
     pub fn test_coherence::utils::helpers::helper_fn(name: &str) -> String
-
-    A helper function that returns a greeting.
     ");
 }
 
@@ -208,27 +190,25 @@ fn filter_single_match_returns_doc() {
     assert!(success, "CLI should succeed: {stderr}");
     // Single exact match returns full documentation, not a list
     assert_snapshot!(stdout, @r#"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
-    pub struct test_coherence::Container<T>
+    /// A generic container with public fields and methods.
+    ///
+    /// Examples
+    ///
+    ///   let c = Container::new("hello".into(), 42);
+    pub struct test_coherence::Container<T> {
+        /// The stored value.
+        pub value: T,
+        /// An optional label for the container.
+        pub label: String,
+    }
 
-    A generic container with public fields and methods.
-
-    Examples
-
-      let c = Container::new("hello".into(), 42);
-
-    Fields:
-      /// The stored value.
-      pub value: T
-      /// An optional label for the container.
-      pub label: String
-
-    Methods:
-      /// Creates a new `Container` with the given value and label.
-      pub fn new(value: T, label: String) -> Self
-      /// Returns a reference to the stored value.
-      pub fn get(&self) -> &T
+    // Methods
+    /// Creates a new `Container` with the given value and label.
+    pub fn new(value: T, label: String) -> Self
+    /// Returns a reference to the stored value.
+    pub fn get(&self) -> &T
     "#);
 }
 
@@ -238,11 +218,11 @@ fn filter_multiple_matches_returns_list() {
     assert!(success, "CLI should succeed: {stderr}");
     // "process" substring matches multiple items → returns sorted list
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
-    fn     test_coherence::Processor::process
-    fn     test_coherence::Processor::process_batch
-    fn     test_coherence::process
+    fn test_coherence::Processor::process
+    fn test_coherence::Processor::process_batch
+    fn test_coherence::process
     ");
 }
 
@@ -255,23 +235,23 @@ fn filter_no_match_returns_full_list() {
     );
     // No matches → falls back to showing all items in the crate
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
-    mod    test_coherence
+    mod test_coherence
     struct test_coherence::Container
     struct test_coherence::Error
-    const  test_coherence::MAX_SIZE
-    trait  test_coherence::Processor
-    fn     test_coherence::Processor::process
-    fn     test_coherence::Processor::process_batch
-    type   test_coherence::Result
-    enum   test_coherence::Status
-    fn     test_coherence::process
-    mod    test_coherence::utils
-    const  test_coherence::utils::DEFAULT_BUFFER_SIZE
-    fn     test_coherence::utils::format_debug
-    mod    test_coherence::utils::helpers
-    fn     test_coherence::utils::helpers::helper_fn
+    const test_coherence::MAX_SIZE
+    trait test_coherence::Processor
+    fn test_coherence::Processor::process
+    fn test_coherence::Processor::process_batch
+    type test_coherence::Result
+    enum test_coherence::Status
+    fn test_coherence::process
+    mod test_coherence::utils
+    const test_coherence::utils::DEFAULT_BUFFER_SIZE
+    fn test_coherence::utils::format_debug
+    mod test_coherence::utils::helpers
+    fn test_coherence::utils::helpers::helper_fn
     ");
 }
 
@@ -281,32 +261,24 @@ fn filter_exact_match_returns_doc() {
     assert!(success, "CLI should succeed: {stderr}");
     // Exact suffix match on "Processor" returns full trait doc
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
-    pub trait test_coherence::Processor
-
-    A trait for processing items.
-
-    Implementors define how items of type [`Self::Input`] are transformed
-    into [`Self::Output`].
-
-    Associated Types:
-      /// The input type.
-      type Input
-      /// The output type.
-      type Output
-
-    Associated Constants:
-      /// The default batch size.
-      const DEFAULT_BATCH_SIZE: usize
-
-    Required Methods:
-      /// Processes a single item.
-      pub fn process(&self, input: Self::Input) -> Self::Output
-
-    Provided Methods:
-      /// Processes a batch of items using the default implementation.
-      pub fn process_batch(&self, items: Vec<Self::Input>) -> Vec<Self::Output>
+    /// A trait for processing items.
+    ///
+    /// Implementors define how items of type [`Self::Input`] are transformed
+    /// into [`Self::Output`].
+    pub trait test_coherence::Processor {
+        /// The input type.
+        type Input;
+        /// The output type.
+        type Output;
+        /// The default batch size.
+        const DEFAULT_BATCH_SIZE: usize;
+        /// Processes a single item.
+        fn process(&self, input: Self::Input) -> Self::Output;
+        /// Processes a batch of items using the default implementation.
+        fn process_batch(&self, items: Vec<Self::Input>) -> Vec<Self::Output> { .. }
+    }
     ");
 }
 
@@ -320,10 +292,10 @@ fn path_filter_within_module() {
     assert!(success, "CLI should succeed: {stderr}");
     // Searches only within the utils module scope
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
-    mod    test_coherence::utils::helpers
-    fn     test_coherence::utils::helpers::helper_fn
+    mod test_coherence::utils::helpers
+    fn test_coherence::utils::helpers::helper_fn
     ");
 }
 
@@ -333,13 +305,13 @@ fn path_filter_no_match_in_scope() {
     assert!(success, "CLI should succeed: {stderr}");
     // Container is not in utils → falls back to showing all items in utils scope
     assert_snapshot!(stdout, @r"
-    Using local dependency version 0.1.0 at [LOCAL_PATH]
+    // version 0.1.0 (local)
 
-    mod    test_coherence::utils
-    const  test_coherence::utils::DEFAULT_BUFFER_SIZE
-    fn     test_coherence::utils::format_debug
-    mod    test_coherence::utils::helpers
-    fn     test_coherence::utils::helpers::helper_fn
+    mod test_coherence::utils
+    const test_coherence::utils::DEFAULT_BUFFER_SIZE
+    fn test_coherence::utils::format_debug
+    mod test_coherence::utils::helpers
+    fn test_coherence::utils::helpers::helper_fn
     ");
 }
 
@@ -398,7 +370,7 @@ fn list_is_sorted_alphabetically() {
     assert!(success);
     let paths: Vec<&str> = stdout
         .lines()
-        .skip(1) // skip "Using local dependency..." line
+        .skip(1) // skip "// version..." line
         .filter(|l| !l.is_empty())
         .map(|l| l.split_whitespace().last().unwrap())
         .collect();
