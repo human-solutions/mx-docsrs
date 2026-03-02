@@ -12,3 +12,6 @@ docsrs-core = { path = "../docsrs-core" }
 docsrs-mcp = { path = "../docsrs-mcp" }
 rmcp.workspace = true
 tokio.workspace = true
+
+[dev-dependencies]
+cargo-husky.workspace = true

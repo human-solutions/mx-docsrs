@@ -24,3 +24,4 @@ ouroboros = "0.18.5"
 rmcp = { version = "0.17.0", features = ["server", "transport-io", "macros"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-std"] }
 schemars = "1.1.0"
+cargo-husky = { version = "1.5.0", default-features = false, features = ["user-hooks"] }
