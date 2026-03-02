@@ -12,7 +12,8 @@ fn crate_root_shows_doc_and_children() {
     let (stdout, stderr, success) = run_cli(&["test-coherence"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency at [LOCAL_PATH] (version 0.1.0)
+    Using local dependency version 0.1.0 at [LOCAL_PATH]
+
     pub mod test_coherence
 
     A test crate for output coherence testing.
@@ -40,7 +41,8 @@ fn path_lookup_struct() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::Container"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r#"
-    Using local dependency at [LOCAL_PATH] (version 0.1.0)
+    Using local dependency version 0.1.0 at [LOCAL_PATH]
+
     pub struct test_coherence::Container<T>
 
     A generic container with public fields and methods.
@@ -64,7 +66,8 @@ fn path_lookup_enum() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::Status"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency at [LOCAL_PATH] (version 0.1.0)
+    Using local dependency version 0.1.0 at [LOCAL_PATH]
+
     pub enum test_coherence::Status
 
     Represents the status of an operation.
@@ -81,7 +84,8 @@ fn path_lookup_trait() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::Processor"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency at [LOCAL_PATH] (version 0.1.0)
+    Using local dependency version 0.1.0 at [LOCAL_PATH]
+
     pub trait test_coherence::Processor
 
     A trait for processing items.
@@ -109,7 +113,8 @@ fn path_lookup_function() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::process"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency at [LOCAL_PATH] (version 0.1.0)
+    Using local dependency version 0.1.0 at [LOCAL_PATH]
+
     pub fn test_coherence::process<T>(input: T) -> alloc::string::String where T: core::convert::Into<alloc::string::String>
 
     Processes the input value, applying the given transformation.
@@ -123,7 +128,8 @@ fn path_lookup_module() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::utils"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency at [LOCAL_PATH] (version 0.1.0)
+    Using local dependency version 0.1.0 at [LOCAL_PATH]
+
     pub mod test_coherence::utils
 
     Utility functions for common operations.
@@ -139,7 +145,8 @@ fn path_lookup_const() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::MAX_SIZE"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency at [LOCAL_PATH] (version 0.1.0)
+    Using local dependency version 0.1.0 at [LOCAL_PATH]
+
     pub const test_coherence::MAX_SIZE: usize
 
     The maximum allowed size for a container.
@@ -151,7 +158,8 @@ fn path_lookup_type_alias() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::Result"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency at [LOCAL_PATH] (version 0.1.0)
+    Using local dependency version 0.1.0 at [LOCAL_PATH]
+
     pub type test_coherence::Result<T> = core::result::Result<T, test_coherence::Error>
 
     A type alias for results with [`Error`].
@@ -163,7 +171,8 @@ fn path_lookup_nested() {
     let (stdout, stderr, success) = run_cli(&["test-coherence::utils::helpers::helper_fn"]);
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
-    Using local dependency at [LOCAL_PATH] (version 0.1.0)
+    Using local dependency version 0.1.0 at [LOCAL_PATH]
+
     pub fn test_coherence::utils::helpers::helper_fn(name: &str) -> alloc::string::String
 
     A helper function that returns a greeting.
@@ -187,7 +196,8 @@ fn filter_single_match_returns_doc() {
     assert!(success, "CLI should succeed: {stderr}");
     // Single exact match returns full documentation, not a list
     assert_snapshot!(stdout, @r#"
-    Using local dependency at [LOCAL_PATH] (version 0.1.0)
+    Using local dependency version 0.1.0 at [LOCAL_PATH]
+
     pub struct test_coherence::Container<T>
 
     A generic container with public fields and methods.
@@ -212,7 +222,8 @@ fn filter_multiple_matches_returns_list() {
     assert!(success, "CLI should succeed: {stderr}");
     // "process" substring matches multiple items → returns sorted list
     assert_snapshot!(stdout, @r"
-    Using local dependency at [LOCAL_PATH] (version 0.1.0)
+    Using local dependency version 0.1.0 at [LOCAL_PATH]
+
     fn     test_coherence::Processor::process
     fn     test_coherence::Processor::process_batch
     fn     test_coherence::process
@@ -228,7 +239,8 @@ fn filter_no_match_returns_full_list() {
     );
     // No matches → falls back to showing all items in the crate
     assert_snapshot!(stdout, @r"
-    Using local dependency at [LOCAL_PATH] (version 0.1.0)
+    Using local dependency version 0.1.0 at [LOCAL_PATH]
+
     mod    test_coherence
     struct test_coherence::Container
     struct test_coherence::Error
@@ -253,7 +265,8 @@ fn filter_exact_match_returns_doc() {
     assert!(success, "CLI should succeed: {stderr}");
     // Exact suffix match on "Processor" returns full trait doc
     assert_snapshot!(stdout, @r"
-    Using local dependency at [LOCAL_PATH] (version 0.1.0)
+    Using local dependency version 0.1.0 at [LOCAL_PATH]
+
     pub trait test_coherence::Processor
 
     A trait for processing items.
@@ -286,7 +299,8 @@ fn path_filter_within_module() {
     assert!(success, "CLI should succeed: {stderr}");
     // Searches only within the utils module scope
     assert_snapshot!(stdout, @r"
-    Using local dependency at [LOCAL_PATH] (version 0.1.0)
+    Using local dependency version 0.1.0 at [LOCAL_PATH]
+
     mod    test_coherence::utils::helpers
     fn     test_coherence::utils::helpers::helper_fn
     ");
@@ -298,7 +312,8 @@ fn path_filter_no_match_in_scope() {
     assert!(success, "CLI should succeed: {stderr}");
     // Container is not in utils → falls back to showing all items in utils scope
     assert_snapshot!(stdout, @r"
-    Using local dependency at [LOCAL_PATH] (version 0.1.0)
+    Using local dependency version 0.1.0 at [LOCAL_PATH]
+
     mod    test_coherence::utils
     const  test_coherence::utils::DEFAULT_BUFFER_SIZE
     fn     test_coherence::utils::format_debug

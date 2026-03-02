@@ -16,12 +16,11 @@ fn normalize_output(output: &str) -> String {
         let normalized = if line.starts_with("Local crate found at: ") {
             // Replace "Local crate found at: /path/to/file.json"
             "Local crate found at: [LOCAL_PATH]".to_string()
-        } else if let Some(rest) = line.strip_prefix("Using local dependency at /") {
-            // Replace "Using local dependency at /path/to/crate (version X.Y.Z)"
-            // Find " (version " to extract the version part
-            if let Some(version_start) = rest.find(" (version ") {
-                let version_part = &rest[version_start..]; // " (version X.Y.Z)"
-                format!("Using local dependency at [LOCAL_PATH]{version_part}")
+        } else if let Some(rest) = line.strip_prefix("Using local dependency version ") {
+            // Replace "Using local dependency version X.Y.Z at /path/to/crate"
+            if let Some(at_idx) = rest.find(" at /") {
+                let version = &rest[..at_idx];
+                format!("Using local dependency version {version} at [LOCAL_PATH]")
             } else {
                 line.to_string()
             }

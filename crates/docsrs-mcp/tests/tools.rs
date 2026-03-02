@@ -70,12 +70,10 @@ fn normalize_output(output: &str) -> String {
         .map(|line| {
             if line.starts_with("Local crate found at: ") {
                 "Local crate found at: [LOCAL_PATH]".to_string()
-            } else if let Some(rest) = line.strip_prefix("Using local dependency at /") {
-                if let Some(version_start) = rest.find(" (version ") {
-                    format!(
-                        "Using local dependency at [LOCAL_PATH]{}",
-                        &rest[version_start..]
-                    )
+            } else if let Some(rest) = line.strip_prefix("Using local dependency version ") {
+                if let Some(at_idx) = rest.find(" at /") {
+                    let version = &rest[..at_idx];
+                    format!("Using local dependency version {version} at [LOCAL_PATH]")
                 } else {
                     line.to_string()
                 }
@@ -115,6 +113,7 @@ async fn lookup_docs_with_path() {
     );
     insta::assert_snapshot!(output, @r#"
     Using dependency serde@1.0.228
+
     pub use serde::Deserialize
 
     Derive macro available if serde is built with `features = ["derive"]`.

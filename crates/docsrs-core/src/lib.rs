@@ -9,6 +9,7 @@ mod version_resolver;
 
 use clap::Parser;
 use cli::Cli;
+use colored::Colorize;
 use docfetch::{BuildLocalDocsResult, build_local_docs, clear_cache, fetch_docs};
 use jsondoc::JsonDoc;
 use version_resolver::VersionResolver;
@@ -82,7 +83,7 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
             Ok(resolver) => {
                 if let Some(resolved) = resolver.resolve_crate(&crate_spec.name) {
                     // Print resolution message
-                    output.push_str(&format!("{}\n", resolved.format_message()));
+                    output.push_str(&format!("{}\n\n", resolved.format_message().bright_black()));
 
                     if resolved.is_local {
                         // Build and load local docs

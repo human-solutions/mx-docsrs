@@ -1,8 +1,9 @@
 ---
-source: crates/mcp/tests/tools.rs
+source: crates/docsrs-mcp/tests/tools.rs
 expression: output
 ---
 Using dependency serde@1.0.228
+
 trait  serde::Deserialize
 fn     serde::Deserialize::deserialize
 trait  serde::Deserializer

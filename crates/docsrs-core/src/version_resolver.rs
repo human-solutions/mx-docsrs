@@ -65,8 +65,8 @@ impl ResolvedCrate {
                 .map(|p| p.display().to_string())
                 .unwrap_or_else(|| ".".to_string());
             format!(
-                "Using local dependency at {} (version {})",
-                path, self.version
+                "Using local dependency version {} at {}",
+                self.version, path
             )
         } else if let Some(chain) = &self.dep_chain {
             // Transitive dependency
@@ -491,7 +491,7 @@ mod tests {
         };
         assert_eq!(
             resolved.format_message(),
-            "Using local dependency at ./crates/my-lib (version 0.1.0)"
+            "Using local dependency version 0.1.0 at ./crates/my-lib"
         );
     }
 
