@@ -2,6 +2,9 @@
 name = "docsrs"
 version = "0.1.0"
 edition.workspace = true
+description = "Fast Rust documentation lookup for CLI and AI assistants"
+repository = "https://github.com/human-solutions/mx-docsrs"
+license = "MIT OR Apache-2.0"
 
 [[bin]]
 name = "docsrs"
