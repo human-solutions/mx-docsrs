@@ -2,6 +2,7 @@ use anyhow::Result;
 use rustdoc_fmt::{Colorizer, Output};
 use rustdoc_types::{Crate, ItemEnum};
 
+use super::{first_doc_line, write_section};
 use crate::doc::render::RenderingContext;
 
 /// Format child items for a trait (associated types, methods, etc.)
@@ -12,14 +13,15 @@ pub(crate) fn format_trait_children(
     context: &RenderingContext,
 ) -> Result<()> {
     let colorizer = Colorizer::get();
-    let mut assoc_types = Vec::new();
-    let mut assoc_consts = Vec::new();
-    let mut required_methods = Vec::new();
-    let mut provided_methods = Vec::new();
+    let mut assoc_types: Vec<(Option<String>, String)> = Vec::new();
+    let mut assoc_consts: Vec<(Option<String>, String)> = Vec::new();
+    let mut required_methods: Vec<(Option<String>, String)> = Vec::new();
+    let mut provided_methods: Vec<(Option<String>, String)> = Vec::new();
 
     // Process trait items
     for item_id in &trait_.items {
         if let Some(item) = krate.index.get(item_id) {
+            let doc = first_doc_line(&item.docs);
             match &item.inner {
                 ItemEnum::AssocType { type_, .. } => {
                     // Associated type
@@ -37,7 +39,7 @@ pub(crate) fn format_trait_children(
                     }
 
                     let type_str = colorizer.tokens(&type_output.into_tokens());
-                    assoc_types.push(type_str);
+                    assoc_types.push((doc, type_str));
                 }
                 ItemEnum::AssocConst { type_, value } => {
                     // Associated constant
@@ -58,7 +60,7 @@ pub(crate) fn format_trait_children(
                     }
 
                     let const_str = colorizer.tokens(&const_output.into_tokens());
-                    assoc_consts.push(const_str);
+                    assoc_consts.push((doc, const_str));
                 }
                 ItemEnum::Function(func) => {
                     // Method (required or provided)
@@ -74,9 +76,9 @@ pub(crate) fn format_trait_children(
 
                     // Check if this is a required or provided method
                     if func.has_body {
-                        provided_methods.push(method_str);
+                        provided_methods.push((doc, method_str));
                     } else {
-                        required_methods.push(method_str);
+                        required_methods.push((doc, method_str));
                     }
                 }
                 _ => {
@@ -86,49 +88,11 @@ pub(crate) fn format_trait_children(
         }
     }
 
-    // Output Associated Types section
-    if !assoc_types.is_empty() {
-        output.push('\n');
-        output.push_str("Associated Types:\n");
-        for assoc_type in assoc_types {
-            output.push_str("  ");
-            output.push_str(&assoc_type);
-            output.push('\n');
-        }
-    }
-
-    // Output Associated Constants section
-    if !assoc_consts.is_empty() {
-        output.push('\n');
-        output.push_str("Associated Constants:\n");
-        for assoc_const in assoc_consts {
-            output.push_str("  ");
-            output.push_str(&assoc_const);
-            output.push('\n');
-        }
-    }
-
-    // Output Required Methods section
-    if !required_methods.is_empty() {
-        output.push('\n');
-        output.push_str("Required Methods:\n");
-        for method in required_methods {
-            output.push_str("  ");
-            output.push_str(&method);
-            output.push('\n');
-        }
-    }
-
-    // Output Provided Methods section
-    if !provided_methods.is_empty() {
-        output.push('\n');
-        output.push_str("Provided Methods:\n");
-        for method in provided_methods {
-            output.push_str("  ");
-            output.push_str(&method);
-            output.push('\n');
-        }
-    }
+    // Output sections
+    write_section(output, "Associated Types", &assoc_types);
+    write_section(output, "Associated Constants", &assoc_consts);
+    write_section(output, "Required Methods", &required_methods);
+    write_section(output, "Provided Methods", &provided_methods);
 
     Ok(())
 }

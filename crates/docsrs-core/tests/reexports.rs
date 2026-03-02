@@ -55,7 +55,7 @@ fn renamed_struct_is_found() {
     A struct defined in inner module
 
     Fields:
-      pub field: alloc::string::String
+      pub field: String
     ");
 }
 

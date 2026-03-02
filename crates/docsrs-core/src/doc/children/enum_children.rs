@@ -3,6 +3,7 @@ use jsondoc::ImplKind;
 use rustdoc_fmt::{Colorizer, Output};
 use rustdoc_types::{Crate, ItemEnum, Variant};
 
+use super::{first_doc_line, write_section};
 use crate::doc::render::RenderingContext;
 
 /// Format child items for an enum (variants, methods and trait implementations)
@@ -13,8 +14,8 @@ pub(crate) fn format_enum_children(
     context: &RenderingContext,
 ) -> Result<()> {
     let colorizer = Colorizer::get();
-    let mut variants = Vec::new();
-    let mut methods = Vec::new();
+    let mut variants: Vec<(Option<String>, String)> = Vec::new();
+    let mut methods: Vec<(Option<String>, String)> = Vec::new();
     let mut trait_impls = Vec::new();
 
     // Process enum variants
@@ -24,7 +25,8 @@ pub(crate) fn format_enum_children(
         {
             let variant_str =
                 format_variant(variant_item.name.as_deref(), variant, colorizer, context);
-            variants.push(variant_str);
+            let doc = first_doc_line(&variant_item.docs);
+            variants.push((doc, variant_str));
         }
     }
 
@@ -59,7 +61,8 @@ pub(crate) fn format_enum_children(
                                 &func.header,
                             );
                             let method_str = colorizer.tokens(&method_output.into_tokens());
-                            methods.push(method_str);
+                            let doc = first_doc_line(&item.docs);
+                            methods.push((doc, method_str));
                         }
                     }
                 }
@@ -67,29 +70,11 @@ pub(crate) fn format_enum_children(
         }
     }
 
-    // Output Variants section
-    if !variants.is_empty() {
-        output.push('\n');
-        output.push_str("Variants:\n");
-        for variant in variants {
-            output.push_str("  ");
-            output.push_str(&variant);
-            output.push('\n');
-        }
-    }
+    // Output sections
+    write_section(output, "Variants", &variants);
+    write_section(output, "Methods", &methods);
 
-    // Output Methods section
-    if !methods.is_empty() {
-        output.push('\n');
-        output.push_str("Methods:\n");
-        for method in methods {
-            output.push_str("  ");
-            output.push_str(&method);
-            output.push('\n');
-        }
-    }
-
-    // Output Trait Implementations section
+    // Trait impls don't get doc comments
     if !trait_impls.is_empty() {
         output.push('\n');
         output.push_str("Trait Implementations:\n");
@@ -133,12 +118,27 @@ fn format_variant(
             }
             variant_output.symbol(")");
         }
-        rustdoc_types::VariantKind::Struct { .. } => {
-            // Struct variant
+        rustdoc_types::VariantKind::Struct { fields, .. } => {
+            // Struct variant - resolve field IDs to show { field: Type, ... }
             variant_output.whitespace();
             variant_output.symbol("{");
             variant_output.whitespace();
-            variant_output.symbol("...");
+            let mut first = true;
+            for field_id in fields {
+                if let Some(field_item) = context.crate_.index.get(field_id)
+                    && let ItemEnum::StructField(field_type) = &field_item.inner
+                {
+                    if !first {
+                        variant_output.symbol(",");
+                        variant_output.whitespace();
+                    }
+                    variant_output.identifier(field_item.name.as_deref().unwrap_or("_"));
+                    variant_output.symbol(":");
+                    variant_output.whitespace();
+                    variant_output.extend(context.render_type(field_type));
+                    first = false;
+                }
+            }
             variant_output.whitespace();
             variant_output.symbol("}");
         }

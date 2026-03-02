@@ -52,11 +52,15 @@ fn path_lookup_struct() {
       let c = Container::new("hello".into(), 42);
 
     Fields:
+      /// The stored value.
       pub value: T
-      pub label: alloc::string::String
+      /// An optional label for the container.
+      pub label: String
 
     Methods:
-      pub fn new(value: T, label: alloc::string::String) -> Self
+      /// Creates a new `Container` with the given value and label.
+      pub fn new(value: T, label: String) -> Self
+      /// Returns a reference to the stored value.
       pub fn get(&self) -> &T
     "#);
 }
@@ -73,9 +77,12 @@ fn path_lookup_enum() {
     Represents the status of an operation.
 
     Variants:
+      /// The operation has not started.
       Pending
+      /// The operation is running with a progress percentage.
       Running(u8)
-      Done { ... }
+      /// The operation completed with a result message.
+      Done { message: String }
     ");
 }
 
@@ -94,17 +101,22 @@ fn path_lookup_trait() {
     into [`Self::Output`].
 
     Associated Types:
+      /// The input type.
       type Input
+      /// The output type.
       type Output
 
     Associated Constants:
+      /// The default batch size.
       const DEFAULT_BATCH_SIZE: usize
 
     Required Methods:
+      /// Processes a single item.
       pub fn process(&self, input: Self::Input) -> Self::Output
 
     Provided Methods:
-      pub fn process_batch(&self, items: alloc::vec::Vec<Self::Input>) -> alloc::vec::Vec<Self::Output>
+      /// Processes a batch of items using the default implementation.
+      pub fn process_batch(&self, items: Vec<Self::Input>) -> Vec<Self::Output>
     ");
 }
 
@@ -115,7 +127,7 @@ fn path_lookup_function() {
     assert_snapshot!(stdout, @r"
     Using local dependency version 0.1.0 at [LOCAL_PATH]
 
-    pub fn test_coherence::process<T>(input: T) -> alloc::string::String where T: core::convert::Into<alloc::string::String>
+    pub fn test_coherence::process<T>(input: T) -> String where T: Into<String>
 
     Processes the input value, applying the given transformation.
 
@@ -160,7 +172,7 @@ fn path_lookup_type_alias() {
     assert_snapshot!(stdout, @r"
     Using local dependency version 0.1.0 at [LOCAL_PATH]
 
-    pub type test_coherence::Result<T> = core::result::Result<T, test_coherence::Error>
+    pub type test_coherence::Result<T> = Result<T, test_coherence::Error>
 
     A type alias for results with [`Error`].
     ");
@@ -173,7 +185,7 @@ fn path_lookup_nested() {
     assert_snapshot!(stdout, @r"
     Using local dependency version 0.1.0 at [LOCAL_PATH]
 
-    pub fn test_coherence::utils::helpers::helper_fn(name: &str) -> alloc::string::String
+    pub fn test_coherence::utils::helpers::helper_fn(name: &str) -> String
 
     A helper function that returns a greeting.
     ");
@@ -207,11 +219,15 @@ fn filter_single_match_returns_doc() {
       let c = Container::new("hello".into(), 42);
 
     Fields:
+      /// The stored value.
       pub value: T
-      pub label: alloc::string::String
+      /// An optional label for the container.
+      pub label: String
 
     Methods:
-      pub fn new(value: T, label: alloc::string::String) -> Self
+      /// Creates a new `Container` with the given value and label.
+      pub fn new(value: T, label: String) -> Self
+      /// Returns a reference to the stored value.
       pub fn get(&self) -> &T
     "#);
 }
@@ -275,17 +291,22 @@ fn filter_exact_match_returns_doc() {
     into [`Self::Output`].
 
     Associated Types:
+      /// The input type.
       type Input
+      /// The output type.
       type Output
 
     Associated Constants:
+      /// The default batch size.
       const DEFAULT_BATCH_SIZE: usize
 
     Required Methods:
+      /// Processes a single item.
       pub fn process(&self, input: Self::Input) -> Self::Output
 
     Provided Methods:
-      pub fn process_batch(&self, items: alloc::vec::Vec<Self::Input>) -> alloc::vec::Vec<Self::Output>
+      /// Processes a batch of items using the default implementation.
+      pub fn process_batch(&self, items: Vec<Self::Input>) -> Vec<Self::Output>
     ");
 }
 

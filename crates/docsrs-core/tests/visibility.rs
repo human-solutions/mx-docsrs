@@ -17,10 +17,12 @@ fn public_struct_is_found() {
     A fully public struct
 
     Fields:
-      pub public_field: alloc::string::String
+      /// A public field
+      pub public_field: String
 
     Methods:
-      pub fn new(public_field: alloc::string::String, private_field: i32) -> Self
+      /// Public constructor
+      pub fn new(public_field: String, private_field: i32) -> Self
     ");
 }
 
@@ -36,8 +38,10 @@ fn public_enum_is_found() {
     A public enum
 
     Variants:
+      /// Public variant
       Variant1
-      Variant2(alloc::string::String)
+      /// Another public variant
+      Variant2(String)
     ");
 }
 
@@ -48,7 +52,7 @@ fn public_function_is_found() {
     assert_snapshot!(stdout, @r"
     Using local dependency version 0.1.0 at [LOCAL_PATH]
 
-    pub fn test_visibility::public_function() -> alloc::string::String
+    pub fn test_visibility::public_function() -> String
 
     A public function
     ");
@@ -92,9 +96,11 @@ fn public_trait_is_found() {
     A trait to test trait visibility
 
     Associated Types:
+      /// Associated type
       type Item
 
     Required Methods:
+      /// Trait method
       pub fn method(&self) -> Self::Item
     ");
 }

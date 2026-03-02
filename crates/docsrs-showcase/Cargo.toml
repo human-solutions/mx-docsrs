@@ -1,0 +1,9 @@
+[package]
+name = "docsrs-showcase"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+docsrs-core = { path = "../docsrs-core" }
+colored = { workspace = true }
+ansi-to-html = "0.2.2"

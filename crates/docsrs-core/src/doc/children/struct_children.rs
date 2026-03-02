@@ -3,6 +3,7 @@ use jsondoc::ImplKind;
 use rustdoc_fmt::{Colorizer, Output};
 use rustdoc_types::{Crate, ItemEnum, StructKind, Visibility};
 
+use super::{first_doc_line, write_section};
 use crate::doc::render::RenderingContext;
 
 /// Format child items for a struct (fields, methods and trait implementations)
@@ -13,9 +14,9 @@ pub(crate) fn format_struct_children(
     context: &RenderingContext,
 ) -> Result<()> {
     let colorizer = Colorizer::get();
-    let mut plain_fields = Vec::new();
-    let mut tuple_fields = Vec::new();
-    let mut methods = Vec::new();
+    let mut plain_fields: Vec<(Option<String>, String)> = Vec::new();
+    let mut tuple_fields: Vec<(Option<String>, String)> = Vec::new();
+    let mut methods: Vec<(Option<String>, String)> = Vec::new();
     let mut trait_impls = Vec::new();
 
     // Process struct fields based on kind
@@ -37,7 +38,8 @@ pub(crate) fn format_struct_children(
                     field_output.extend(context.render_type(field_type));
 
                     let field_str = colorizer.tokens(&field_output.into_tokens());
-                    plain_fields.push(field_str);
+                    let doc = first_doc_line(&field_item.docs);
+                    plain_fields.push((doc, field_str));
                 }
             }
         }
@@ -58,7 +60,8 @@ pub(crate) fn format_struct_children(
                     field_output.extend(context.render_type(field_type));
 
                     let field_str = colorizer.tokens(&field_output.into_tokens());
-                    tuple_fields.push(field_str);
+                    let doc = first_doc_line(&field_item.docs);
+                    tuple_fields.push((doc, field_str));
                 }
             }
         }
@@ -98,7 +101,8 @@ pub(crate) fn format_struct_children(
                                 &func.header,
                             );
                             let method_str = colorizer.tokens(&method_output.into_tokens());
-                            methods.push(method_str);
+                            let doc = first_doc_line(&item.docs);
+                            methods.push((doc, method_str));
                         }
                     }
                 }
@@ -106,40 +110,12 @@ pub(crate) fn format_struct_children(
         }
     }
 
-    // Output Fields section (for plain structs)
-    if !plain_fields.is_empty() {
-        output.push('\n');
-        output.push_str("Fields:\n");
-        for field in plain_fields {
-            output.push_str("  ");
-            output.push_str(&field);
-            output.push('\n');
-        }
-    }
+    // Output sections
+    write_section(output, "Fields", &plain_fields);
+    write_section(output, "Tuple Fields", &tuple_fields);
+    write_section(output, "Methods", &methods);
 
-    // Output Tuple Fields section (for tuple structs)
-    if !tuple_fields.is_empty() {
-        output.push('\n');
-        output.push_str("Tuple Fields:\n");
-        for field in tuple_fields {
-            output.push_str("  ");
-            output.push_str(&field);
-            output.push('\n');
-        }
-    }
-
-    // Output Methods section
-    if !methods.is_empty() {
-        output.push('\n');
-        output.push_str("Methods:\n");
-        for method in methods {
-            output.push_str("  ");
-            output.push_str(&method);
-            output.push('\n');
-        }
-    }
-
-    // Output Trait Implementations section
+    // Trait impls don't get doc comments (they're just impl signatures)
     if !trait_impls.is_empty() {
         output.push('\n');
         output.push_str("Trait Implementations:\n");

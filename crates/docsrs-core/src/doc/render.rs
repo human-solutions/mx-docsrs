@@ -552,7 +552,11 @@ impl<'c> RenderingContext<'c> {
         if let Some(item) = self.best_item_for_id(&path.id) {
             output.extend(self.render_path(item.path()));
         } else if let Some(item) = self.crate_.paths.get(&path.id) {
-            output.extend(self.render_path_components(item.path.iter()));
+            if let Some(short) = Self::simplify_stdlib_path(&item.path) {
+                output.type_(short);
+            } else {
+                output.extend(self.render_path_components(item.path.iter()));
+            }
         } else if !path.path.is_empty() {
             output.extend(self.render_path_name(&path.path));
         }
@@ -560,6 +564,61 @@ impl<'c> RenderingContext<'c> {
             output.extend(self.render_generic_args(args));
         }
         output
+    }
+
+    /// Simplify well-known stdlib paths to their short prelude names.
+    ///
+    /// Maps paths like `["alloc", "string", "String"]` to `"String"`,
+    /// only for paths from `core`, `alloc`, or `std` crates (3+ segments).
+    fn simplify_stdlib_path(path: &[String]) -> Option<&'static str> {
+        if path.len() < 3 {
+            return None;
+        }
+
+        let crate_name = path[0].as_str();
+        if !matches!(crate_name, "core" | "alloc" | "std") {
+            return None;
+        }
+
+        match path.last().unwrap().as_str() {
+            // Prelude types
+            "String" => Some("String"),
+            "Vec" => Some("Vec"),
+            "Box" => Some("Box"),
+            "Option" => Some("Option"),
+            "Result" => Some("Result"),
+            // Conversion traits
+            "From" => Some("From"),
+            "Into" => Some("Into"),
+            "TryFrom" => Some("TryFrom"),
+            "TryInto" => Some("TryInto"),
+            "AsRef" => Some("AsRef"),
+            "AsMut" => Some("AsMut"),
+            // Common traits
+            "Clone" => Some("Clone"),
+            "Copy" => Some("Copy"),
+            "Debug" => Some("Debug"),
+            "Display" => Some("Display"),
+            "Default" => Some("Default"),
+            "Send" => Some("Send"),
+            "Sync" => Some("Sync"),
+            "Sized" => Some("Sized"),
+            "Unpin" => Some("Unpin"),
+            "Drop" => Some("Drop"),
+            "Iterator" => Some("Iterator"),
+            "Error" => Some("Error"),
+            "Hash" => Some("Hash"),
+            "Eq" => Some("Eq"),
+            "PartialEq" => Some("PartialEq"),
+            "Ord" => Some("Ord"),
+            "PartialOrd" => Some("PartialOrd"),
+            "Fn" => Some("Fn"),
+            "FnMut" => Some("FnMut"),
+            "FnOnce" => Some("FnOnce"),
+            "ToOwned" => Some("ToOwned"),
+            "ToString" => Some("ToString"),
+            _ => None,
+        }
     }
 
     fn render_path_name(&self, name: &str) -> Output {
