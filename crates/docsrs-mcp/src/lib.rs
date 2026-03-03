@@ -22,9 +22,9 @@ impl Default for DocsRsServer {
 
 #[derive(Deserialize, JsonSchema)]
 pub struct LookupDocsParams {
-    /// Crate path: crate[@version][::path] (e.g., "tokio", "serde@1.0", "tokio::task::spawn")
+    /// Crate path: crate[@version][::path]. Hyphens are normalized to underscores. Examples: "tokio", "serde@1.0", "tokio::task::spawn"
     pub crate_spec: String,
-    /// Optional text filter to search for (e.g., "spawn", "async"). When provided, returns matching items instead of full documentation.
+    /// Text filter (substring match). Single match returns full docs; multiple returns a sorted list.
     #[serde(default)]
     pub filter: Option<String>,
 }
@@ -40,19 +40,19 @@ impl DocsRsServer {
     #[tool(
         description = "Fetch Rust documentation from docs.rs or local workspace crates.
 
-Single match: returns documentation and child items (modules, types, functions).
-Multiple matches: returns a list of matching items.
+Modes:
+- Crate root: \"serde\" → crate docs + public items
+- Path lookup: \"serde::Deserialize\" → full docs for that item
+- Search: \"serde\", filter: \"Map\" → list matching items (or full docs if exactly one match)
 
-Version resolution (when no @version specified):
-- Direct/transitive dependency: uses version from Cargo.toml
-- Local workspace crate: builds docs with cargo +nightly doc
-- Not found: falls back to latest on docs.rs
+Version resolution (no @version):
+- Dependency in Cargo.toml: locked version
+- Local workspace crate: builds locally
+- Otherwise: fetches latest from docs.rs
 
 Examples:
-- crate_spec: \"serde\" → crate docs (version from Cargo.toml)
-- crate_spec: \"tokio::spawn\" → function docs
-- crate_spec: \"serde@1.0\" → pinned version
-- crate_spec: \"tokio\", filter: \"spawn\" → items matching \"spawn\""
+- crate_spec: \"serde@1.0\" → pinned
+- crate_spec: \"tokio::task\", filter: \"spawn\" → scoped search"
     )]
     async fn lookup_docs(
         &self,
