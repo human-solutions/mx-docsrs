@@ -72,6 +72,10 @@ expression: output
 ///   • CSV (https://docs.rs/csv), Comma-separated values is a tabular text file format.
 pub mod serde
 
+pub trait Deserialize
+pub trait Deserializer
+pub trait Serialize
+pub trait Serializer
 pub mod de
 pub macro forward_to_deserialize_any!
 pub mod ser

@@ -1,13 +1,13 @@
 use anyhow::Result;
 use rustdoc_fmt::Colorizer;
-use rustdoc_types::Crate;
+use rustdoc_types::{Crate, Item, ItemEnum};
 
 use crate::doc::render::RenderingContext;
 use crate::list::ListItem;
 
 /// Format child items for a module
 pub(crate) fn format_module_children(
-    _krate: &Crate,
+    krate: &Crate,
     module: &rustdoc_types::Module,
     output: &mut String,
     context: &RenderingContext,
@@ -16,15 +16,21 @@ pub(crate) fn format_module_children(
     let mut items: Vec<ListItem> = Vec::new();
 
     for item_id in &module.items {
-        // Look up the JsonDocItem via id_to_items
-        if let Some(jsondoc_items) = context.id_to_items.get(item_id) {
-            // Get the first (best) item for this ID
-            if let Some(jsondoc_item) = jsondoc_items.first() {
-                // Convert to ListItem (handles visibility filtering internally)
-                if let Some(list_item) = ListItem::from_jsondoc_item(jsondoc_item) {
-                    items.push(list_item);
-                }
-            }
+        // Resolve Use items to their targets, since id_to_items
+        // is keyed by the target's ID (Use items are inlined during processing)
+        let lookup_id = match krate.index.get(item_id) {
+            Some(Item {
+                inner: ItemEnum::Use(use_),
+                ..
+            }) => use_.id.as_ref().unwrap_or(item_id),
+            _ => item_id,
+        };
+
+        if let Some(jsondoc_items) = context.id_to_items.get(lookup_id)
+            && let Some(jsondoc_item) = jsondoc_items.first()
+            && let Some(list_item) = ListItem::from_jsondoc_item(jsondoc_item)
+        {
+            items.push(list_item);
         }
     }
 
