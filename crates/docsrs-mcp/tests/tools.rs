@@ -98,6 +98,7 @@ async fn lookup_docs_with_path() {
     );
     insta::assert_snapshot!(output, @r#"
     // dependency serde@1.0.228
+    // found serde::Deserialize
 
     /// Derive macro available if serde is built with `features = ["derive"]`.
     pub use serde::Deserialize

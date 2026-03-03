@@ -13,6 +13,7 @@ fn crate_root_shows_doc_and_children() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // showing mod test_coherence (crate root)
 
     /// A test crate for output coherence testing.
     ///
@@ -41,6 +42,7 @@ fn path_lookup_struct() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
+    // found struct test_coherence::Container
 
     /// A generic container with public fields and methods.
     ///
@@ -68,6 +70,7 @@ fn path_lookup_enum() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found enum test_coherence::Status
 
     /// Represents the status of an operation.
     pub enum test_coherence::Status {
@@ -87,6 +90,7 @@ fn path_lookup_trait() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found trait test_coherence::Processor
 
     /// A trait for processing items.
     ///
@@ -113,6 +117,7 @@ fn path_lookup_function() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found fn test_coherence::process
 
     /// Processes the input value, applying the given transformation.
     ///
@@ -127,6 +132,7 @@ fn path_lookup_module() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found mod test_coherence::utils
 
     /// Utility functions for common operations.
     pub mod test_coherence::utils
@@ -143,6 +149,7 @@ fn path_lookup_const() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found const test_coherence::MAX_SIZE
 
     /// The maximum allowed size for a container.
     pub const test_coherence::MAX_SIZE: usize
@@ -155,6 +162,7 @@ fn path_lookup_type_alias() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found type test_coherence::Result
 
     /// A type alias for results with [`Error`].
     pub type test_coherence::Result<T> = Result<T, test_coherence::Error>
@@ -167,6 +175,7 @@ fn path_lookup_nested() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found fn test_coherence::utils::helpers::helper_fn
 
     /// A helper function that returns a greeting.
     pub fn test_coherence::utils::helpers::helper_fn(name: &str) -> String
@@ -191,6 +200,7 @@ fn filter_single_match_returns_doc() {
     // Single exact match returns full documentation, not a list
     assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
+    // found struct test_coherence::Container
 
     /// A generic container with public fields and methods.
     ///
@@ -219,8 +229,8 @@ fn filter_multiple_matches_returns_list() {
     // "process" substring matches multiple items → returns sorted list
     assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
-
     // 3 items matching "process"
+
     fn test_coherence::Processor::process
     fn test_coherence::Processor::process_batch
     fn test_coherence::process
@@ -237,8 +247,8 @@ fn filter_no_match_returns_full_list() {
     // No matches → falls back to showing all items in the crate
     assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
-
     // no matches for "zzz_nonexistent" — showing all 15 items
+
     mod test_coherence
     struct test_coherence::Container
     struct test_coherence::Error
@@ -264,6 +274,7 @@ fn filter_exact_match_returns_doc() {
     // Exact suffix match on "Processor" returns full trait doc
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found trait test_coherence::Processor
 
     /// A trait for processing items.
     ///
@@ -295,8 +306,8 @@ fn path_filter_within_module() {
     // Searches only within the utils module scope
     assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
-
     // 2 items matching "helper"
+
     mod test_coherence::utils::helpers
     fn test_coherence::utils::helpers::helper_fn
     "#);
@@ -309,8 +320,8 @@ fn path_filter_no_match_in_scope() {
     // Container is not in utils → falls back to showing all items in utils scope
     assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
-
     // no matches for "Container" — showing all 5 items
+
     mod test_coherence::utils
     const test_coherence::utils::DEFAULT_BUFFER_SIZE
     fn test_coherence::utils::format_debug

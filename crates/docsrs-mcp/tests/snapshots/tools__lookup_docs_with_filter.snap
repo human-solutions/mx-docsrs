@@ -3,8 +3,8 @@ source: crates/docsrs-mcp/tests/tools.rs
 expression: output
 ---
 // dependency serde@1.0.228
-
 // 104 items matching "Deserialize"
+
 trait serde::Deserialize
 fn serde::Deserialize::deserialize
 trait serde::Deserializer

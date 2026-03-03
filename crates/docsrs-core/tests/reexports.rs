@@ -11,8 +11,8 @@ fn simple_struct_reexport() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
-
     // 2 items matching "InnerStruct"
+
     struct test_reexports::InnerStruct
     struct test_reexports::reexported::InnerStruct
     "#);
@@ -24,8 +24,8 @@ fn simple_enum_reexport() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
-
     // 2 items matching "InnerEnum"
+
     enum test_reexports::InnerEnum
     enum test_reexports::reexported::InnerEnum
     "#);
@@ -37,8 +37,8 @@ fn simple_function_reexport() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
-
     // 2 items matching "inner_function"
+
     fn test_reexports::inner_function
     fn test_reexports::reexported::inner_function
     "#);
@@ -52,6 +52,7 @@ fn renamed_struct_is_found() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found struct test_reexports::RenamedStruct
 
     /// A struct defined in inner module
     pub struct test_reexports::ChainedReexport {
@@ -68,6 +69,7 @@ fn deeply_nested_reexport() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found struct test_reexports::DeeplyNestedItem
 
     /// A deeply nested struct
     pub struct test_reexports::DeeplyNestedItem {
@@ -84,6 +86,7 @@ fn selective_foo_is_found() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found struct test_reexports::selective::Foo
 
     pub struct test_reexports::selective::Foo
     ");
@@ -95,6 +98,7 @@ fn selective_bar_is_found() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found struct test_reexports::selective::Bar
 
     pub struct test_reexports::selective::Bar
     ");
@@ -106,8 +110,8 @@ fn selective_baz_not_found() {
     assert!(success, "CLI should succeed (no results is not an error)");
     assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
-
     // no matches for "Baz" — showing all 3 items
+
     mod test_reexports::selective
     struct test_reexports::selective::Bar
     struct test_reexports::selective::Foo
@@ -122,8 +126,8 @@ fn trait_reexport() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
-
     // 4 items matching "MyTrait"
+
     trait test_reexports::MyTrait
     fn test_reexports::MyTrait::do_something
     trait test_reexports::traits::MyTrait
@@ -137,8 +141,8 @@ fn trait_impl_reexport() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
-
     // 2 items matching "TraitImpl"
+
     struct test_reexports::TraitImpl
     struct test_reexports::traits::TraitImpl
     "#);

@@ -14,7 +14,7 @@ use docfetch::{BuildLocalDocsResult, build_local_docs, clear_cache, fetch_docs};
 use jsondoc::JsonDoc;
 use version_resolver::VersionResolver;
 
-use crate::list::{ListItem, list_items};
+use crate::list::{EntryKind, ListItem, list_items};
 
 /// Run the CLI with the given arguments and return the output as a string.
 ///
@@ -136,14 +136,22 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
     let doc = JsonDoc::from(krate);
 
     // Determine the output based on path and filter
-    let result = match (path_prefix.as_deref(), filter.as_deref()) {
+    let (description, result) = match (path_prefix.as_deref(), filter.as_deref()) {
         // Pure navigation: show doc for exact path
         (Some(prefix), None) => {
             let full_path = format!("{}::{}", crate_spec.name, prefix);
             let id = doc
                 .find_item_by_path(&full_path)
                 .ok_or_else(|| anyhow::anyhow!("No item found at {}", full_path))?;
-            doc::signature_for_id(&doc, &id)?
+            let kind_str = doc
+                .crate_data()
+                .index
+                .get(&id)
+                .and_then(|item| EntryKind::from_item_enum(&item.inner))
+                .map(|k| format!("{} ", k.keyword()))
+                .unwrap_or_default();
+            let desc = format!("// found {}{}", kind_str, full_path);
+            (desc, doc::signature_for_id(&doc, &id)?)
         }
         // Search mode: filter items and show list or single doc
         (path_prefix, Some(filter)) => {
@@ -162,12 +170,12 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
             list.sort_by(|item1, item2| item1.path.cmp(&item2.path));
 
             if list.len() == 1 {
-                doc::signature_for_id(&doc, &list[0].id)?
+                let desc = format!("// found {} {}", list[0].kind.keyword(), list[0].path);
+                (desc, doc::signature_for_id(&doc, &list[0].id)?)
             } else {
                 let colorizer = rustdoc_fmt::Colorizer::get();
 
-                // Add descriptive header
-                let header = if filter_matched {
+                let desc = if filter_matched {
                     format!("// {} items matching \"{}\"", list.len(), filter)
                 } else {
                     format!(
@@ -182,22 +190,25 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
                     .map(|entry| colorizer.tokens(&entry.as_output().into_tokens()))
                     .collect();
 
-                format!("{}\n{}", header.bright_black(), items.join("\n"))
+                (desc, items.join("\n"))
             }
         }
         // No path, no filter: show crate root doc
         (None, None) => {
             let id = doc.crate_root_id();
-            doc::signature_for_id(&doc, &id)?
+            let desc = format!("// showing mod {} (crate root)", crate_spec.name);
+            (desc, doc::signature_for_id(&doc, &id)?)
         }
     };
 
-    // Prepend any accumulated output (e.g., local crate banner)
+    // Build final output: version line + description line + content
+    let description_line = format!("{}", description.bright_black());
     if output.is_empty() {
-        Ok(result)
+        Ok(format!("{}\n\n{}", description_line, result))
     } else {
-        output.push_str(&result);
-        Ok(output)
+        // output ends with \n\n; replace trailing \n with description + \n\n
+        let trimmed = output.trim_end_matches('\n');
+        Ok(format!("{}\n{}\n\n{}", trimmed, description_line, result))
     }
 }
 

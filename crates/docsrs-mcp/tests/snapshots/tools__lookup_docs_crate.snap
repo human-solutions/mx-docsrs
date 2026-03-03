@@ -3,6 +3,7 @@ source: crates/docsrs-mcp/tests/tools.rs
 expression: output
 ---
 // dependency serde@1.0.228
+// showing mod serde (crate root)
 
 /// Serde
 ///

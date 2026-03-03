@@ -1,3 +1,4 @@
+pub(crate) use crate::list::list_item::EntryKind;
 pub use crate::list::list_item::ListItem;
 use jsondoc::JsonDoc;
 

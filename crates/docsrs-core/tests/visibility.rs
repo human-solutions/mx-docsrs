@@ -11,6 +11,7 @@ fn public_struct_is_found() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found struct test_visibility::PublicStruct
 
     /// A fully public struct
     pub struct test_visibility::PublicStruct {
@@ -30,6 +31,7 @@ fn public_enum_is_found() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found enum test_visibility::PublicEnum
 
     /// A public enum
     pub enum test_visibility::PublicEnum {
@@ -47,6 +49,7 @@ fn public_function_is_found() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found fn test_visibility::public_function
 
     /// A public function
     pub fn test_visibility::public_function() -> String
@@ -59,6 +62,7 @@ fn public_const_is_found() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found const test_visibility::PUBLIC_CONST
 
     /// Public constant
     pub const test_visibility::PUBLIC_CONST: i32
@@ -71,6 +75,7 @@ fn public_type_alias_is_found() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found type test_visibility::PublicAlias
 
     /// Public type alias
     pub type test_visibility::PublicAlias = test_visibility::PublicStruct
@@ -83,6 +88,7 @@ fn public_trait_is_found() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found trait test_visibility::PublicTrait
 
     /// A trait to test trait visibility
     pub trait test_visibility::PublicTrait {
@@ -100,6 +106,7 @@ fn nested_public_is_found() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found struct test_visibility::public_module::NestedPublic
 
     /// Public item in public module
     pub struct test_visibility::public_module::NestedPublic
@@ -112,6 +119,7 @@ fn deeply_nested_is_found() {
     assert!(success, "CLI should succeed: {stderr}");
     assert_snapshot!(stdout, @r"
     // version 0.1.0 (local)
+    // found struct test_visibility::public_module::inner::DeeplyNested
 
     /// Public item in nested module
     pub struct test_visibility::public_module::inner::DeeplyNested
@@ -126,8 +134,8 @@ fn crate_visible_struct_not_found() {
     assert!(success, "CLI should succeed (no results is not an error)");
     assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
-
     // no matches for "CrateVisibleStruct" — showing all 13 items
+
     mod test_visibility
     const test_visibility::PUBLIC_CONST
     type test_visibility::PublicAlias
@@ -150,8 +158,8 @@ fn crate_visible_enum_not_found() {
     assert!(success, "CLI should succeed (no results is not an error)");
     assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
-
     // no matches for "CrateVisibleEnum" — showing all 13 items
+
     mod test_visibility
     const test_visibility::PUBLIC_CONST
     type test_visibility::PublicAlias
@@ -174,8 +182,8 @@ fn private_struct_not_found() {
     assert!(success, "CLI should succeed (no results is not an error)");
     assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
-
     // no matches for "PrivateStruct" — showing all 13 items
+
     mod test_visibility
     const test_visibility::PUBLIC_CONST
     type test_visibility::PublicAlias
@@ -198,8 +206,8 @@ fn super_visible_not_found() {
     assert!(success, "CLI should succeed (no results is not an error)");
     assert_snapshot!(stdout, @r#"
     // version 0.1.0 (local)
-
     // no matches for "NestedSuperVisible" — showing all 13 items
+
     mod test_visibility
     const test_visibility::PUBLIC_CONST
     type test_visibility::PublicAlias

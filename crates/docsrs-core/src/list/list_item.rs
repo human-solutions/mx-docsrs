@@ -16,7 +16,7 @@ pub enum EntryKind {
 }
 
 impl EntryKind {
-    fn from_item_enum(item: &ItemEnum) -> Option<Self> {
+    pub(crate) fn from_item_enum(item: &ItemEnum) -> Option<Self> {
         Some(match item {
             ItemEnum::Constant { .. } => EntryKind::Constant,
             ItemEnum::Function(_) => EntryKind::Function,
@@ -42,7 +42,7 @@ impl EntryKind {
         })
     }
 
-    fn keyword(self) -> &'static str {
+    pub(crate) fn keyword(self) -> &'static str {
         match self {
             EntryKind::Module => "mod",
             EntryKind::Struct => "struct",
@@ -63,7 +63,7 @@ impl EntryKind {
 pub struct ListItem {
     module: Vec<(String, EntryKind)>,
     pub path: String,
-    kind: EntryKind,
+    pub(crate) kind: EntryKind,
     pub id: Id,
 }
 
