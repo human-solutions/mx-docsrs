@@ -10,77 +10,6 @@ fn main() {
     colored::control::set_override(true);
 
     let examples: Vec<Example> = vec![
-        // --- Crate Root ---
-        Example {
-            title: "Crate root doc (with resolution message)",
-            category: "Crate Root",
-            args: &["test-coherence", "--color=always"],
-        },
-        // --- Path Lookup ---
-        Example {
-            title: "Struct",
-            category: "Path Lookup",
-            args: &["test-coherence::Container", "--color=always"],
-        },
-        Example {
-            title: "Enum",
-            category: "Path Lookup",
-            args: &["test-coherence::Status", "--color=always"],
-        },
-        Example {
-            title: "Trait",
-            category: "Path Lookup",
-            args: &["test-coherence::Processor", "--color=always"],
-        },
-        Example {
-            title: "Function",
-            category: "Path Lookup",
-            args: &["test-coherence::process", "--color=always"],
-        },
-        Example {
-            title: "Constant",
-            category: "Path Lookup",
-            args: &["test-coherence::MAX_SIZE", "--color=always"],
-        },
-        Example {
-            title: "Type Alias",
-            category: "Path Lookup",
-            args: &["test-coherence::Result", "--color=always"],
-        },
-        Example {
-            title: "Module",
-            category: "Path Lookup",
-            args: &["test-coherence::utils", "--color=always"],
-        },
-        Example {
-            title: "Nested item (deep path)",
-            category: "Path Lookup",
-            args: &[
-                "test-coherence::utils::helpers::helper_fn",
-                "--color=always",
-            ],
-        },
-        // --- Filter Search ---
-        Example {
-            title: "Single match → full doc",
-            category: "Filter Search",
-            args: &["test-coherence", "Container", "--color=always"],
-        },
-        Example {
-            title: "Multiple matches → sorted list",
-            category: "Filter Search",
-            args: &["test-coherence", "process", "--color=always"],
-        },
-        Example {
-            title: "No match → full list fallback",
-            category: "Filter Search",
-            args: &["test-coherence", "zzz_nonexistent", "--color=always"],
-        },
-        Example {
-            title: "Path + filter → scoped search",
-            category: "Filter Search",
-            args: &["test-coherence::utils", "format", "--color=always"],
-        },
         // --- Re-exports ---
         Example {
             title: "Simple re-export",
@@ -102,7 +31,7 @@ fn main() {
         Example {
             title: "Path not found",
             category: "Errors",
-            args: &["test-coherence::NonexistentItem", "--color=always"],
+            args: &["test-visibility::NonexistentItem", "--color=always"],
         },
         // --- Special ---
         Example {

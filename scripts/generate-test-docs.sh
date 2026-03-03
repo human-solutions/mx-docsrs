@@ -13,9 +13,4 @@ echo "  - test-reexports"
 output=$(cargo +nightly rustdoc -p test-reexports -- -Zunstable-options --output-format json 2>&1)
 echo "$output" | grep -v "^warning:" || true
 
-# Generate for test-coherence
-echo "  - test-coherence"
-output=$(cargo +nightly rustdoc -p test-coherence -- -Zunstable-options --output-format json 2>&1)
-echo "$output" | grep -v "^warning:" || true
-
 echo "Rustdoc JSON generation complete"
