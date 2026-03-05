@@ -76,7 +76,7 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
     let krate = if let Some(explicit_version) = crate_spec.version.clone() {
         // User provided explicit version - skip resolution, just fetch
         let use_cache = !parsed_args.no_cache;
-        fetch_docs(&crate_spec.name, &explicit_version, use_cache)?
+        fetch_docs(&crate_spec.original_name, &explicit_version, use_cache)?
     } else {
         // Try to resolve from Cargo.toml
         match VersionResolver::new() {
@@ -115,20 +115,20 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
                     // Not found in project, use latest
                     output.push_str(&format!(
                         "{}\n\n",
-                        format!("// {}@latest", crate_spec.name).bright_black()
+                        format!("// {}@latest", crate_spec.original_name).bright_black()
                     ));
                     let use_cache = !parsed_args.no_cache;
-                    fetch_docs(&crate_spec.name, "latest", use_cache)?
+                    fetch_docs(&crate_spec.original_name, "latest", use_cache)?
                 }
             }
             Err(_) => {
                 // No Cargo.toml found, default to latest
                 output.push_str(&format!(
                     "{}\n\n",
-                    format!("// {}@latest", crate_spec.name).bright_black()
+                    format!("// {}@latest", crate_spec.original_name).bright_black()
                 ));
                 let use_cache = !parsed_args.no_cache;
-                fetch_docs(&crate_spec.name, "latest", use_cache)?
+                fetch_docs(&crate_spec.original_name, "latest", use_cache)?
             }
         }
     };

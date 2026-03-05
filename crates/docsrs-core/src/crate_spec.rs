@@ -14,7 +14,10 @@ use crate::util::normalize_crate_name;
 /// - `tokio@1.0::task::spawn` → name="tokio", version=Some("1.0"), path_prefix=Some("task::spawn")
 #[derive(Debug, Clone)]
 pub struct CrateSpec {
+    /// Normalized name (hyphens → underscores), used for Rust path matching
     pub name: String,
+    /// Original name as provided by the user, used for docs.rs URLs
+    pub original_name: String,
     pub version: Option<String>,
     pub path_prefix: Option<String>,
 }
@@ -73,6 +76,7 @@ impl CrateSpec {
 
         Ok(CrateSpec {
             name: normalize_crate_name(name),
+            original_name: name.to_string(),
             version: version.map(|v| v.to_string()),
             path_prefix,
         })
@@ -215,11 +219,21 @@ mod tests {
     fn test_normalize_hyphen_to_underscore() {
         let spec = CrateSpec::parse("serde-json").unwrap();
         assert_eq!(spec.name, "serde_json");
+        assert_eq!(spec.original_name, "serde-json");
     }
 
     #[test]
     fn test_normalize_underscore_unchanged() {
         let spec = CrateSpec::parse("serde_json").unwrap();
         assert_eq!(spec.name, "serde_json");
+        assert_eq!(spec.original_name, "serde_json");
+    }
+
+    #[test]
+    fn test_original_name_preserved_with_version() {
+        let spec = CrateSpec::parse("sea-orm@1.0").unwrap();
+        assert_eq!(spec.name, "sea_orm");
+        assert_eq!(spec.original_name, "sea-orm");
+        assert_eq!(spec.version, Some("1.0".to_string()));
     }
 }
