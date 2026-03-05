@@ -20,4 +20,4 @@ jobs:
       - run: cargo binstall --no-confirm cargo-nextest
       - run: cargo fmt -- --check
       - run: cargo clippy -- -D warnings
-      - run: cargo nextest run
+      - run: cargo nextest run --workspace
