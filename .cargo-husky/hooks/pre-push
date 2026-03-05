@@ -2,4 +2,4 @@
 set -e
 cargo fmt -- --check
 cargo clippy -- -D warnings
-cargo nextest run
+cargo nextest run --workspace
