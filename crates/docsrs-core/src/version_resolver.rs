@@ -105,24 +105,20 @@ impl VersionResolver {
         let metadata = MetadataCommand::new()
             .manifest_path(&manifest_path)
             .exec()
-            .context("Failed to execute cargo metadata")?;
+            .map_err(|e| anyhow::anyhow!("Failed to execute cargo metadata: {e}"))?;
 
         Ok(Self { metadata })
     }
 
-    /// Find Cargo.toml by searching current directory and parent directories
+    /// Find Cargo.toml by searching from the current directory upward.
     fn find_cargo_toml() -> Option<PathBuf> {
         let mut current_dir = env::current_dir().ok()?;
-
         loop {
             let manifest_path = current_dir.join("Cargo.toml");
             if manifest_path.exists() {
                 return Some(manifest_path);
             }
-
-            // Move to parent directory
             if !current_dir.pop() {
-                // Reached filesystem root
                 return None;
             }
         }

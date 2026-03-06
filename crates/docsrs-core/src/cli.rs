@@ -12,7 +12,8 @@ EXAMPLES:
   docsrs tokio                   Crate docs (version from Cargo.toml)
   docsrs tokio::spawn            Specific item
   docsrs serde@1.0::Deserialize  Explicit version
-  docsrs tokio task              Search for 'task' in tokio")]
+  docsrs tokio task              Search for 'task' in tokio
+")]
 #[command(after_long_help = "\
 VERSION RESOLUTION:
   When no version is specified, docsrs resolves it automatically:

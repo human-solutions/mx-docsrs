@@ -27,7 +27,17 @@ use crate::list::{EntryKind, ListItem, list_items};
 pub fn run_cli(args: &[&str]) -> Result<String, String> {
     match run_cli_impl(args) {
         Ok(output) => Ok(output),
-        Err(e) => Err(e.to_string()),
+        Err(e) => {
+            // Format the full error chain so root causes aren't lost
+            let mut msg = e.to_string();
+            for cause in e.chain().skip(1) {
+                let cause_str = cause.to_string();
+                if !msg.contains(&cause_str) {
+                    msg.push_str(&format!(": {}", cause_str));
+                }
+            }
+            Err(msg)
+        }
     }
 }
 

@@ -62,11 +62,11 @@ Examples:
         let filter = params.0.filter;
 
         let result = tokio::task::spawn_blocking(move || {
-            if let Some(filter) = filter {
-                docsrs_core::run_cli(&[&crate_spec, &filter])
-            } else {
-                docsrs_core::run_cli(&[&crate_spec])
+            let mut args: Vec<&str> = vec![&crate_spec];
+            if let Some(ref filter) = filter {
+                args.push(filter);
             }
+            docsrs_core::run_cli(&args)
         })
         .await
         .map_err(|e| McpError::internal_error(e.to_string(), None))?;

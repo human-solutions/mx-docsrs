@@ -29,7 +29,7 @@ async fn call_tool(tool: impl Into<String>, args: serde_json::Value) -> (String,
     let client = TestClient;
 
     // Create bidirectional in-memory transport using duplex streams
-    let (client_io, server_io) = tokio::io::duplex(4096);
+    let (client_io, server_io) = tokio::io::duplex(1024 * 1024);
 
     // Start server in background
     let server_handle = tokio::spawn(async move {
@@ -129,5 +129,5 @@ async fn lookup_invalid_crate() {
     )
     .await;
     assert!(is_error, "lookup_docs should fail for invalid crate");
-    insta::assert_snapshot!(output, @"http status: 404");
+    insta::assert_snapshot!(output, @"Crate 'nonexistent_crate_12345@latest' not found on docs.rs. Check the crate name and version.");
 }

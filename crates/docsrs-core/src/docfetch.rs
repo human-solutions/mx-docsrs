@@ -109,14 +109,21 @@ pub fn fetch_docs(crate_name: &str, version: &str, use_cache: bool) -> Result<Cr
     match fetch_docs_inner(crate_name, version, use_cache) {
         Ok(krate) => Ok(krate),
         Err(original_err) => {
-            if is_http_404(&original_err)
-                && let Some(alt_name) = alternate_crate_name(crate_name)
-            {
-                eprintln!(
-                    "Fetch failed for '{}', retrying with '{}'...",
-                    crate_name, alt_name
+            if is_http_404(&original_err) {
+                if let Some(alt_name) = alternate_crate_name(crate_name) {
+                    eprintln!(
+                        "Fetch failed for '{}', retrying with '{}'...",
+                        crate_name, alt_name
+                    );
+                    if let Ok(krate) = fetch_docs_inner(&alt_name, version, use_cache) {
+                        return Ok(krate);
+                    }
+                }
+                bail!(
+                    "Crate '{}@{}' not found on docs.rs. Check the crate name and version.",
+                    crate_name,
+                    version
                 );
-                return fetch_docs_inner(&alt_name, version, use_cache).map_err(|_| original_err);
             }
             Err(original_err)
         }
