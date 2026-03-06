@@ -1,3 +1,4 @@
+use crate::util::alternate_crate_name;
 use anyhow::{Context, Result, bail};
 use directories::ProjectDirs;
 use rustdoc_types::Crate;
@@ -102,8 +103,27 @@ pub fn load_local_docs(path: &Path) -> Result<Crate> {
 }
 
 /// Fetch and search documentation from docs.rs
-/// Returns the search results and the parsed crate data
+/// Returns the search results and the parsed crate data.
+/// If the fetch fails and the crate name contains `_` or `-`, retries with the swapped form.
 pub fn fetch_docs(crate_name: &str, version: &str, use_cache: bool) -> Result<Crate> {
+    match fetch_docs_inner(crate_name, version, use_cache) {
+        Ok(krate) => Ok(krate),
+        Err(original_err) => {
+            if is_http_404(&original_err)
+                && let Some(alt_name) = alternate_crate_name(crate_name)
+            {
+                eprintln!(
+                    "Fetch failed for '{}', retrying with '{}'...",
+                    crate_name, alt_name
+                );
+                return fetch_docs_inner(&alt_name, version, use_cache).map_err(|_| original_err);
+            }
+            Err(original_err)
+        }
+    }
+}
+
+fn fetch_docs_inner(crate_name: &str, version: &str, use_cache: bool) -> Result<Crate> {
     // Try to load from cache first
     let compressed_data = if use_cache {
         match load_from_cache(crate_name, version) {
@@ -127,6 +147,12 @@ pub fn fetch_docs(crate_name: &str, version: &str, use_cache: bool) -> Result<Cr
         serde_json::from_slice(&decompressed_data).context("Failed to parse rustdoc JSON")?;
 
     Ok(krate)
+}
+
+/// Check if an error is an HTTP 404 from ureq
+fn is_http_404(err: &anyhow::Error) -> bool {
+    err.downcast_ref::<ureq::Error>()
+        .is_some_and(|e| matches!(e, ureq::Error::StatusCode(404)))
 }
 
 /// Get the cache directory path for rustdoc JSON files

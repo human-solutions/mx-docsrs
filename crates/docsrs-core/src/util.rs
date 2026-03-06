@@ -3,9 +3,47 @@ pub fn normalize_crate_name(name: &str) -> String {
     name.replace('-', "_")
 }
 
+/// Return an alternate crate name by swapping underscores and hyphens.
+/// Returns `None` if the name contains neither.
+pub fn alternate_crate_name(name: &str) -> Option<String> {
+    if name.contains('_') {
+        Some(name.replace('_', "-"))
+    } else if name.contains('-') {
+        Some(name.replace('-', "_"))
+    } else {
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_alternate_underscore_to_hyphen() {
+        assert_eq!(
+            alternate_crate_name("iroh_docs"),
+            Some("iroh-docs".to_string())
+        );
+    }
+
+    #[test]
+    fn test_alternate_hyphen_to_underscore() {
+        assert_eq!(
+            alternate_crate_name("serde-json"),
+            Some("serde_json".to_string())
+        );
+    }
+
+    #[test]
+    fn test_alternate_no_separator() {
+        assert_eq!(alternate_crate_name("tokio"), None);
+    }
+
+    #[test]
+    fn test_alternate_multiple_underscores() {
+        assert_eq!(alternate_crate_name("a_b_c_d"), Some("a-b-c-d".to_string()));
+    }
 
     #[test]
     fn test_normalize_hyphen_to_underscore() {
