@@ -11,3 +11,14 @@ command = "scripts/generate-test-docs.sh"
 [[profile.default.scripts]]
 filter = "all()"
 setup = "generate-test-docs"
+
+# Network test group: caps parallelism so we don't hammer docs.rs and
+# gives network-dependent tests room to recover from flakes.
+[test-groups]
+network = { max-threads = 4 }
+
+[[profile.default.overrides]]
+filter = "binary(/^network_/)"
+test-group = "network"
+retries = 2
+slow-timeout = { period = "60s", terminate-after = 3 }

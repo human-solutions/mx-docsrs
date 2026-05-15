@@ -131,3 +131,93 @@ async fn lookup_invalid_crate() {
     assert!(is_error, "lookup_docs should fail for invalid crate");
     insta::assert_snapshot!(output, @"Crate 'nonexistent_crate_12345@latest' not found on docs.rs. Check the crate name and version.");
 }
+
+// --- Additional end-to-end MCP tests against external crates ---
+//
+// These pin specific versions of well-known crates that are confirmed to
+// fetch from docs.rs and parse with the workspace's rustdoc-types version.
+
+#[tokio::test]
+async fn lookup_struct_via_path() {
+    let (output, is_error) = call_tool(
+        "lookup_docs",
+        serde_json::json!({
+            "crate_spec": "anyhow@1.0.99::Error"
+        }),
+    )
+    .await;
+    assert!(!is_error, "expected success; got error:\n{output}");
+    assert!(
+        output.starts_with("// found struct anyhow::Error"),
+        "expected struct description; got:\n{output}"
+    );
+    assert!(output.contains("pub struct anyhow::Error"));
+}
+
+#[tokio::test]
+async fn lookup_with_exact_suffix_filter() {
+    let (output, is_error) = call_tool(
+        "lookup_docs",
+        serde_json::json!({
+            "crate_spec": "anyhow@1.0.99",
+            "filter": "Error"
+        }),
+    )
+    .await;
+    assert!(!is_error, "expected success; got error:\n{output}");
+    assert!(
+        output.starts_with("// found struct anyhow::Error"),
+        "expected single-match description; got:\n{output}"
+    );
+}
+
+#[tokio::test]
+async fn lookup_with_path_scoped_filter() {
+    let (output, is_error) = call_tool(
+        "lookup_docs",
+        serde_json::json!({
+            "crate_spec": "tokio@1.40.5::sync::mpsc",
+            "filter": "channel"
+        }),
+    )
+    .await;
+    assert!(!is_error, "expected success; got error:\n{output}");
+    assert!(
+        output.starts_with("// 2 items matching \"channel\""),
+        "expected 2-item list description; got:\n{output}"
+    );
+    assert!(output.contains("fn tokio::sync::mpsc::channel"));
+    assert!(output.contains("fn tokio::sync::mpsc::unbounded_channel"));
+}
+
+#[tokio::test]
+async fn lookup_type_alias_kind() {
+    let (output, is_error) = call_tool(
+        "lookup_docs",
+        serde_json::json!({
+            "crate_spec": "anyhow@1.0.99::Result"
+        }),
+    )
+    .await;
+    assert!(!is_error, "expected success; got error:\n{output}");
+    assert!(
+        output.starts_with("// found type anyhow::Result"),
+        "expected type-alias description; got:\n{output}"
+    );
+}
+
+#[tokio::test]
+async fn lookup_unknown_version_reports_error() {
+    let (output, is_error) = call_tool(
+        "lookup_docs",
+        serde_json::json!({
+            "crate_spec": "anyhow@99.99.99"
+        }),
+    )
+    .await;
+    assert!(is_error, "expected error for unknown version");
+    assert!(
+        output.contains("not found on docs.rs"),
+        "expected not-found message; got:\n{output}"
+    );
+}
