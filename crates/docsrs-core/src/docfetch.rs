@@ -258,16 +258,16 @@ fn save_to_cache(crate_name: &str, version: &str, data: &[u8]) -> Result<()> {
     }
 
     fs::write(&cache_path, data).context("Failed to save to cache")?;
-    println!("Saved to cache: {}", cache_path.display());
+    eprintln!("Saved to cache: {}", cache_path.display());
     Ok(())
 }
 
 /// Download rustdoc JSON from docs.rs
 fn download_rustdoc_json(crate_name: &str, version: &str) -> Result<Vec<u8>> {
-    println!("Fetching rustdoc JSON from docs.rs...");
+    eprintln!("Fetching rustdoc JSON from docs.rs...");
 
     let url = format!("https://docs.rs/crate/{}/{}/json", crate_name, version);
-    println!("URL: {}", url);
+    eprintln!("URL: {}", url);
 
     let mut response = ureq::get(&url).call()?;
 
@@ -276,7 +276,7 @@ fn download_rustdoc_json(crate_name: &str, version: &str) -> Result<Vec<u8>> {
         .body_mut()
         .as_reader()
         .read_to_end(&mut compressed_data)?;
-    println!("Downloaded {} bytes (compressed)", compressed_data.len());
+    eprintln!("Downloaded {} bytes (compressed)", compressed_data.len());
 
     Ok(compressed_data)
 }
@@ -299,9 +299,9 @@ pub fn clear_cache() -> Result<()> {
 
     if cache_dir.exists() {
         fs::remove_dir_all(&cache_dir).context("Failed to clear cache")?;
-        println!("Cache cleared: {}", cache_dir.display());
+        eprintln!("Cache cleared: {}", cache_dir.display());
     } else {
-        println!("Cache directory does not exist");
+        eprintln!("Cache directory does not exist");
     }
 
     Ok(())
