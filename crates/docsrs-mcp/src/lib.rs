@@ -80,15 +80,8 @@ Examples:
 
 impl ServerHandler for DocsRsServer {
     fn get_info(&self) -> ServerInfo {
-        ServerInfo {
-            server_info: Implementation {
-                name: "docsrs".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                ..Default::default()
-            },
-            capabilities: ServerCapabilities::builder().enable_tools().build(),
-            ..Default::default()
-        }
+        ServerInfo::new(ServerCapabilities::builder().enable_tools().build())
+            .with_server_info(Implementation::new("docsrs", env!("CARGO_PKG_VERSION")))
     }
 
     async fn list_tools(

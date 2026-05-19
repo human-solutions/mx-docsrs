@@ -214,7 +214,7 @@ pub fn generate_markdown_report(report: &AnalysisReport) -> String {
     ];
 
     // Sort by count descending
-    features.sort_by(|a, b| b.1.cmp(&a.1));
+    features.sort_by_key(|f| std::cmp::Reverse(f.1));
 
     for (name, count) in features {
         let prevalence = report
