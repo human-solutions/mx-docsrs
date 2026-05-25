@@ -18,3 +18,4 @@ jsondoc = { path = "../jsondoc" }
 
 [dev-dependencies]
 insta.workspace = true
+tempfile.workspace = true

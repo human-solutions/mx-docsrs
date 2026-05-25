@@ -11,6 +11,7 @@ Query [docs.rs](https://docs.rs) and local crate documentation with automatic ve
 - **Local crate support**: Auto-builds documentation for workspace crates
 - **Syntax highlighting**: Color-coded terminal output with markdown formatting
 - **MCP server**: Integrates with Claude Code and other MCP-compatible AI tools
+- **Claude Code skill**: Ship a `SKILL.md` alongside the binary for one-line install
 - **Caching**: Fast repeated queries with local documentation cache
 
 ## Installation
@@ -81,6 +82,30 @@ docsrs --no-cache tokio
 # Control color output
 docsrs --color=always tokio
 docsrs --color=never tokio
+```
+
+## Claude Code skill
+
+docsrs ships an [Agent Skill](https://agentskills.io) so Claude Code reaches for `docsrs` instead of grepping `~/.cargo/registry` or fetching docs.rs directly. The skill's `description` is always loaded into the session context, which is what makes it actually get used.
+
+Install it for the current user:
+
+```bash
+docsrs --install-skill            # writes ~/.claude/skills/docsrs/SKILL.md
+```
+
+Install it only for the current project (checked into the repo):
+
+```bash
+docsrs --install-skill --scope project   # writes ./.claude/skills/docsrs/SKILL.md
+```
+
+Reinstalling is idempotent. If the target file exists with different content (e.g. you edited it), the install aborts; pass `--force` to overwrite.
+
+You can also pipe the skill content anywhere:
+
+```bash
+docsrs --print-skill > some/path/SKILL.md
 ```
 
 ## MCP Server

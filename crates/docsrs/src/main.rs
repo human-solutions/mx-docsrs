@@ -7,8 +7,19 @@ use rmcp::service::ServiceExt;
 async fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
 
-    // Check for --mcp flag (ignores all other args)
-    if args.iter().any(|a| a == "--mcp") {
+    // --print-skill / --install-skill take precedence over --mcp so that
+    // `docsrs --mcp --install-skill` performs the install instead of
+    // starting the MCP server. `--mcp` is sniffed here (it isn't a CLI
+    // flag known to clap), so when routing skill ops we drop it before
+    // forwarding to the CLI parser.
+    let skill_op = args
+        .iter()
+        .any(|a| a == "--print-skill" || a == "--install-skill");
+
+    if skill_op {
+        let filtered: Vec<String> = args.iter().filter(|a| *a != "--mcp").cloned().collect();
+        run_cli(&filtered);
+    } else if args.iter().any(|a| a == "--mcp") {
         run_mcp_server().await;
     } else {
         run_cli(&args);

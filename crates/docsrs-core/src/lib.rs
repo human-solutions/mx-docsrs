@@ -1,9 +1,10 @@
-mod cli;
+pub mod cli;
 mod color;
 mod crate_spec;
 mod doc;
 mod docfetch;
 mod list;
+pub mod skill;
 mod util;
 mod version_resolver;
 
@@ -70,6 +71,50 @@ fn run_cli_impl(args: &[&str]) -> anyhow::Result<String> {
     if parsed_args.clear_cache {
         clear_cache()?;
         output.push_str("Cache cleared successfully\n");
+        return Ok(output);
+    }
+
+    // Handle --print-skill: emit the bundled SKILL.md and exit.
+    if parsed_args.print_skill {
+        return Ok(skill::SKILL_MD.to_string());
+    }
+
+    // Handle --install-skill: write the bundled SKILL.md into Claude Code's
+    // discovery path for the requested scope.
+    if parsed_args.install_skill {
+        let target_dir = skill::resolve_scope_dir(parsed_args.scope)?;
+        let outcome = skill::install_skill(&target_dir, parsed_args.force)?;
+        let target_file = target_dir.join("SKILL.md");
+        match outcome {
+            skill::InstallOutcome::Written => {
+                output.push_str(&format!("Installed {}\n", target_file.display()));
+            }
+            skill::InstallOutcome::AlreadyUpToDate => {
+                output.push_str(&format!("Already up to date: {}\n", target_file.display()));
+            }
+            skill::InstallOutcome::Differs => {
+                return Err(anyhow::anyhow!(
+                    "Refusing to overwrite existing file with different content: {}\n\
+                     Pass --force to overwrite.",
+                    target_file.display()
+                ));
+            }
+        }
+        if let Some(other) = skill::other_scope_skill(parsed_args.scope) {
+            // Claude Code precedence: personal (user) overrides project.
+            let note = match parsed_args.scope {
+                cli::SkillScope::User => format!(
+                    "Note: a project-scope SKILL.md also exists at {}; your new user-scope copy takes precedence (personal > project).",
+                    other.display()
+                ),
+                cli::SkillScope::Project => format!(
+                    "Note: a user-scope SKILL.md also exists at {} and takes precedence over the project-scope copy you just installed (personal > project).",
+                    other.display()
+                ),
+            };
+            output.push_str(&note);
+            output.push('\n');
+        }
         return Ok(output);
     }
 

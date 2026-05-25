@@ -1,7 +1,17 @@
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 
 use crate::color::Color;
 use crate::crate_spec::CrateSpec;
+
+/// Install target for `--install-skill`. Determines which directory the
+/// bundled SKILL.md is written to so Claude Code can discover it.
+#[derive(Copy, Clone, Debug, Eq, PartialEq, ValueEnum)]
+pub enum SkillScope {
+    /// `~/.claude/skills/docsrs/SKILL.md` — available in every project.
+    User,
+    /// `./.claude/skills/docsrs/SKILL.md` — only this project (and its subdirs).
+    Project,
+}
 
 /// Search for documentation of a symbol in a crate
 #[derive(Parser, Debug)]
@@ -57,6 +67,34 @@ pub struct Cli {
     /// arg is equivalent to `--color=always`.
     #[arg(long, value_name = "WHEN", default_value = "auto")]
     pub color: Color,
+
+    /// Print the bundled Claude Code SKILL.md to stdout and exit.
+    #[arg(
+        long,
+        conflicts_with_all = ["crate_spec", "filter", "no_cache", "clear_cache", "install_skill"]
+    )]
+    pub print_skill: bool,
+
+    /// Install the bundled Claude Code SKILL.md into ~/.claude/skills/docsrs/
+    /// (or ./.claude/skills/docsrs/ with --scope project).
+    #[arg(
+        long,
+        conflicts_with_all = ["crate_spec", "filter", "no_cache", "clear_cache", "print_skill"]
+    )]
+    pub install_skill: bool,
+
+    /// Where --install-skill writes the SKILL.md file.
+    #[arg(
+        long,
+        value_name = "SCOPE",
+        default_value = "user",
+        requires = "install_skill"
+    )]
+    pub scope: SkillScope,
+
+    /// Overwrite an existing SKILL.md whose content differs from the bundled version.
+    #[arg(long, requires = "install_skill")]
+    pub force: bool,
 }
 
 fn parse_crate_spec(s: &str) -> Result<CrateSpec, String> {
